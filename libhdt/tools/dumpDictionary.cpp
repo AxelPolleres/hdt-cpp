@@ -1,8 +1,8 @@
 /*
- * dump_dict.cpp
+ * dumpDictionary.cpp
  *
  *  Created on: 08/03/2018
- *      Author: axel
+ *      Author: Axel Polleres
  */
 
 #include <HDT.hpp>
@@ -29,11 +29,12 @@ void signalHandler(int sig) {
 }
 
 void help() {
-	cout << "$ dump_dict <HDT file>" << endl;
+	cout << "$ dumpDictionary <HDT file>" << endl;
 	cout << "\t-h\t\t\t\tThis help" << endl;
-	cout << "\t-p\t\t\t\tPrint all distinct non-qname prefixes (TODO - not yet implemented)" << endl;
-	cout << "\t-q\t\t\t\tPrint all qnames per prefixes (TODO - not yet implemented)." << endl;
+	cout << "\t-p\t\t\t\tPrint all distinct non-qname prefixes" << endl;
+	cout << "\t-q\t\t\t\tPrint all qnames per prefixes (that is, same qname per different prefix will appear duplicated!)" << endl;
 	cout << "\t-r\t<rol>\t\t\tRol (s|p|o|h|a), where a=all, h=shared." << endl;
+	cout << "\t-c\t\t\t\talso print counts" << endl;
 
 	//cout << "\t-v\tVerbose output" << endl;
 }
@@ -41,6 +42,7 @@ void help() {
 int main(int argc, char **argv) {
 	int c;
 	string query, inputFile, rolUser="a";
+	bool count=false;
 	bool pref=false;
 	bool qnames=false;
 
@@ -49,6 +51,9 @@ int main(int argc, char **argv) {
 		switch (c) {
 		case 'h':
 		  help();
+		  break;
+		case 'c':
+		  count = true;
 		  break;
 		case 'p':
 		  pref = true;
@@ -148,7 +153,11 @@ int main(int argc, char **argv) {
 		  }
 	  
 		  if ( strcmp(previous,current) ) {
-		    cout << previous << " : " << cnt << endl;
+		    cout << previous;
+		    if (count) {
+		      cout << " : " << cnt;
+		    }
+		    cout << endl;
 		    cnt = 1;
 		  } else {
 		    cnt++;
@@ -156,7 +165,13 @@ int main(int argc, char **argv) {
 		  previous = current;
 		}
 
-		if( previous ) { cout << previous << " : " << cnt << endl; }
+		if( previous ) {
+		    cout << previous;
+		    if (count) {
+		      cout << " : " << cnt;
+		    }
+		    cout << endl;
+		}
 		
 		delete itSol;
 		delete hdt;
