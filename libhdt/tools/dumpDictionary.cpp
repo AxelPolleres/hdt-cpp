@@ -47,7 +47,7 @@ int main(int argc, char **argv) {
 	bool qnames=false;
 
 
-	while ((c = getopt(argc, argv, "hpqr:")) != -1) {
+	while ((c = getopt(argc, argv, "hcpqr:")) != -1) {
 		switch (c) {
 		case 'h':
 		  help();
