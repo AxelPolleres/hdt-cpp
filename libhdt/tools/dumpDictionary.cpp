@@ -35,7 +35,7 @@ void help() {
 	cout << "\t-q\t\t\t\tPrint all qnames per prefixes (that is, same qname per different prefix will appear duplicated!)" << endl;
 	cout << "\t-r\t<rol>\t\t\tRol (s|p|o|h|a), where a=all, h=shared." << endl;
 	cout << "\t-c\t\t\t\talso print counts" << endl;
-
+	// TODO: add a verbose option:
 	//cout << "\t-v\tVerbose output" << endl;
 }
 
@@ -111,7 +111,9 @@ int main(int argc, char **argv) {
 		char* previous = 0;
 		char* current = 0;
 		char literal[] = "LITERAL";
+		char bnode[] = "BNODE";
 		unsigned long int cnt = 0;
+		char *pscheme; // position of enmd of the URI scheme
 		char *ph; // position of last hash
 		char *ps; // position of last slash
 		char *pc; // position of last colon
@@ -120,7 +122,8 @@ int main(int argc, char **argv) {
 		while (itSol->hasNext()) {
 		 current = reinterpret_cast<char*>(itSol->next());		 
 		  if (pref || qnames) {
-		    ph=0; // position of last hash
+		    pscheme=0;
+	            ph=0; // position of last hash
 		    ps=0; // position of last slash
 		    pc=0; // position of last colon
 		    p=0; // position of namespace separator
@@ -129,17 +132,33 @@ int main(int argc, char **argv) {
 		    // ignore literals or weird identifiers for qname or prefix search.!
 		    if( current[0]=='"' ) {
 		      current = literal;		      
+		    } else if( current[0]=='_' ) {
+		      current = bnode;		      
 		    } else {
 		      // look for fartherst right '#','/', or ':'
-		      ph = strrchr(current, '#');
-		      pc = strrchr(current, ':');
-		      ps = strrchr(current, '/');
+		      pscheme = strchr(current, ':');
+		      //cout << "x1" << endl; 
+		      while ( pscheme != NULL && *(++pscheme) == '/' )
+			{
+			  // find the last position of the scheme part of the URI.
+			}
+		      //cout << "x2" << endl; 
+		      if (pscheme == NULL )
+			{
+			  pscheme = current;
+			}
+                      //cout << "x3" << endl; 
+
+		      ps = strrchr(pscheme, '/');
+		      ph = strrchr(pscheme, '#');
+		      pc = strrchr(pscheme, ':');
 		      if(ph || pc || ps) {
 			p = (pc > ph) ? pc : ph; // set p to the max of ph,pc,ps
 			p = (ps > p ) ? ps : p;
 			if(pref) { // print prefix only
-			  //TODO: Is that evil? i.e. does it cause memory troubles to simply overwrite a character in the middle with 0?
-			  *(p+1) = 0;
+			  
+			   //TODO: Is that evil? i.e. does it cause memory troubles to simply overwrite a character in the middle with 0?
+			   *(p+1) = 0;
 			} else { // print qname only
 			  current = (p+1);
 			}
