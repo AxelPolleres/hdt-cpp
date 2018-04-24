@@ -639,6 +639,46 @@ IteratorTripleID *BitmapTriples::search(TripleID & pattern)
 	}
 }
 
+IteratorTripleID *BitmapTriples::searchRange(unsigned int start,unsigned int end,TripleComponentRole rol)
+{
+	CHECK_BITMAPTRIPLES_INITIALIZED
+
+	if (rol==SUBJECT){
+		return new BitmapTriplesRangeIterator(this,start,end);
+	}
+
+	return new BitmapTriplesRangeIterator(this,start,end);
+	/*
+
+	if(patternString=="?P?") {
+		if(predicateIndex!=NULL) {
+			return new MiddleWaveletIterator(this, pattern);
+		} else {
+			return new IteratorY(this, pattern);
+		}
+	}
+
+	if(patternString=="S?O") {
+	    if(this->order == SPO) {
+		return new SequentialSearchIteratorTripleID(pattern, new BitmapTriplesSearchIterator(this, pattern));
+	    } else if( (this->order == OPS) && (arrayIndex!=NULL)) {
+		return new SequentialSearchIteratorTripleID(pattern, new ObjectIndexIterator(this, pattern));
+	    }
+	}
+
+	if((arrayIndex!=NULL) && (patternString=="??O" || patternString=="?PO" )) {
+		return new ObjectIndexIterator(this, pattern);
+    } else if( predicateIndex != NULL && patternString=="?P?") {
+		return new MiddleWaveletIterator(this, pattern);
+	} else {
+		if(patternString=="???" || patternString=="S??" || patternString=="SP?"|| patternString=="SPO" ) {
+			return new BitmapTriplesSearchIterator(this, pattern);
+		} else {
+			return new SequentialSearchIteratorTripleID(pattern, new BitmapTriplesSearchIterator(this, pattern));
+		}
+	}*/
+}
+
 void BitmapTriples::save(std::ostream & output, ControlInformation &controlInformation, ProgressListener *listener)
 {
 	CHECK_BITMAPTRIPLES_INITIALIZED

@@ -1036,4 +1036,211 @@ TripleID *BTInterleavedIterator::next()
 
 
 
+
+/// RANGE ITERATOR
+BitmapTriplesRangeIterator::BitmapTriplesRangeIterator(BitmapTriples *trip, unsigned int start, unsigned int end) :
+    triples(trip),
+	start(start),
+	end(end),
+    adjY(trip->arrayY, trip->bitmapY),
+    adjZ(trip->arrayZ, trip->bitmapZ)
+{
+
+    if (start>end)
+    	throw std::runtime_error(string("The provided range is incorrect, end<start"));
+
+    findRange();
+    goToStart();
+}
+
+void BitmapTriplesRangeIterator::updateOutput() {
+    // Convert local order to SPO
+    returnTriple.setAll(x,y,z);
+    swapComponentOrder(&returnTriple, triples->order, SPO);
+    //cerr << returnTriple << endl;
+}
+
+void BitmapTriplesRangeIterator::findRange()
+{
+	minY=0;
+	minZ=0;
+    if(start!=0) {
+            // S ? X
+            minY = adjY.find(start-1);
+            minZ = adjZ.find(minY);
+    }
+
+	maxY = adjY.last(end-1)+1;
+	maxZ = adjZ.find(maxY);
+
+    x = start;
+
+
+    //cerr << "findRange: Y(" << minY <<  ", " << maxY << ") Z(" << minZ <<", " << maxZ << ")" << endl;
+}
+
+bool BitmapTriplesRangeIterator::hasNext()
+{
+    return posZ<maxZ;
+}
+
+TripleID *BitmapTriplesRangeIterator::next()
+{
+#if 0
+    cerr << "FWD posZ: " << posZ << " posY: " << posY << endl;
+    cerr << "\tFWD nextZ: " << nextZ << " nextY: " << nextY << endl;
+    cerr << "\tTriple: " << x << ", " << y << ", " << z << endl;
+#endif
+
+    z = adjZ.get(posZ);
+
+    if(posZ==nextZ) {
+        posY++;
+	y = adjY.get(posY);
+	nextZ = adjZ.find(posY+1);
+	//nextZ = adjZ.findNext(nextZ)+1;
+
+        if(posY==nextY) {
+	    x++;
+	    nextY = adjY.find(x);
+	    //nextY = adjY.findNext(nextY)+1;
+        }
+    }
+
+    posZ++;
+
+    updateOutput();
+
+    return &returnTriple;
+}
+
+bool BitmapTriplesRangeIterator::hasPrevious()
+{
+    return posZ>minZ;
+}
+
+TripleID *BitmapTriplesRangeIterator::previous()
+{
+
+    posZ--;
+
+#if 0
+    // TODO: Keep prevZ updated to save bitmap accesses.
+    z = adjZ.get(posZ);
+    if(posZ==prevZ) {
+        posY--;
+        y = adjY.get(posY);
+        prevZ = adjZ.find(posY);
+
+        if(posY==prevY) {
+            x--;
+            prevY = adjY.find(x);
+        }
+    }
+#else
+    posY = adjZ.findListIndex(posZ);
+
+    z = adjZ.get(posZ);
+    y = adjY.get(posY);
+    x = adjY.findListIndex(posY)+1;
+
+    nextY = adjY.last(x-1)+1;
+    nextZ = adjZ.last(posY)+1;
+#endif
+
+#if 0
+    cerr << "BACK posZ: " << posZ << " posY: " << posY << endl;
+    cerr << "\tBack nextZ: " << nextZ << " nextY: " << nextY << endl;
+    cerr << "\tTriple: " << x << ", " << y << ", " << z << endl;
+#endif
+
+    updateOutput();
+
+    return &returnTriple;
+}
+
+void BitmapTriplesRangeIterator::goToStart()
+{
+    posZ = minZ;
+    goToY();
+}
+
+void BitmapTriplesRangeIterator::goToY(){
+	//we assume posZ is positioned
+	if(posZ<maxZ) {
+	    	posY = adjZ.findListIndex(posZ);
+
+	    	z = adjZ.get(posZ);
+	    	y = adjY.get(posY);
+	    	x = adjY.findListIndex(posY)+1;
+
+	    	nextY = adjY.last(x-1)+1;
+	    	nextZ = adjZ.last(posY)+1;
+	    }
+}
+
+size_t BitmapTriplesRangeIterator::estimatedNumResults()
+{
+    return maxZ-minZ;
+}
+
+ResultEstimationType BitmapTriplesRangeIterator::numResultEstimation()
+{
+
+    return EXACT;
+}
+
+bool BitmapTriplesRangeIterator::canGoTo() {
+    return true;
+}
+
+
+void BitmapTriplesRangeIterator::goTo(unsigned int pos) {
+    if ((pos) >= maxZ) {
+    	throw std::runtime_error(string("Given index is ") + NumberToString(pos) + ". Cannot go beyond last element index: " + NumberToString(maxZ));
+	}
+    posZ = pos; // move the position of Z
+	goToY(); // go to the correct Y
+}
+
+void BitmapTriplesRangeIterator::skip(unsigned int pos) {
+	goTo(posZ+pos);
+}
+
+TripleComponentOrder BitmapTriplesRangeIterator::getOrder() {
+    return triples->order;
+}
+
+bool BitmapTriplesRangeIterator::findNextOccurrence(unsigned int value, unsigned char component) {
+
+    return false;
+}
+
+bool BitmapTriplesRangeIterator::isSorted(TripleComponentRole role) {
+    if(triples->order==SPO) {
+	switch(role) {
+	case SUBJECT:
+	    return true;
+	case PREDICATE:
+	    return false;
+	case OBJECT:
+	    return false;
+	}
+    } else if(triples->order==OPS) {
+	switch(role) {
+	case OBJECT:
+	    return true;
+	case PREDICATE:
+	    return false;
+	case SUBJECT:
+	    return false;
+	}
+    }
+
+
+    throw std::runtime_error("Order not supported");
+}
+
+
+
 }
