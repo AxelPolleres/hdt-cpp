@@ -30,55 +30,119 @@ void signalHandler(int sig) {
 	interruptSignal = 1;
 }
 
+char literal[] = "LITERAL";
+char otherIRI[] = "OTHER-IRI"; // non http or https IRI (for option PLD)
+char bnode[] = "BNODE";
+bool count = false;
+bool pld = false;
+bool pref = false;
+bool qnames = false;
+bool exportOutput = false;
+
 void help() {
 	cout << "$ dumpDictionary <HDT file>" << endl;
 	cout << "\t-h\t\t\t\tThis help" << endl;
-	cout << "\t-d\t\t\t\tPrint all distinct Pay-level-domains (PLDs occurring in HTTP and HTTPS IRIs" << endl;
+	cout
+			<< "\t-d\t\t\t\tPrint all distinct Pay-level-domains (PLDs occurring in HTTP and HTTPS IRIs"
+			<< endl;
 	cout << "\t-p\t\t\t\tPrint all distinct non-qname prefixes" << endl;
-	cout << "\t-q\t\t\t\tPrint all qnames per prefixes (that is, same qname per different prefix will appear duplicated!)" << endl;
+	cout
+			<< "\t-q\t\t\t\tPrint all qnames per prefixes (that is, same qname per different prefix will appear duplicated!)"
+			<< endl;
 	cout << "\t-r\t<rol>\t\t\tRol (s|p|o|h|a), where a=all, h=shared." << endl;
 	cout << "\t-c\t\t\t\talso print counts" << endl;
+	cout
+			<< "\t-e <outputFilePrefix>\t\t\t\texport ranges to <outputFilePrefix-{rol}.csv> "
+			<< endl;
 	// TODO: add a verbose option:
 	//cout << "\t-v\tVerbose output" << endl;
 }
 
+void print_CSV_header(ofstream& exportFile){
+	exportFile<<"<Term>, <Initial ID>, <End ID> \n";
+}
 
+void parse_terms_iterator(ofstream& exportFile, int startID,
+		IteratorUCharString* itSol) {
+	char* previous = 0;
+	char* current = 0;
+	int endID = startID - 1;
+	unsigned long int cnt = 0;
+	while (itSol->hasNext()) {
+		current = reinterpret_cast<char*>(itSol->next());
+		if (pref || qnames) {
+			current = process_term_preffix_qname(literal, bnode, pref, current);
+		} else if (pld) {
+			current = process_term_pld(literal, bnode, otherIRI, current);
+		}
 
-
+		if (!previous) {
+			previous = current;
+			//cnt++;
+		}
+		if (strcmp(previous, current)) {
+			cout << previous;
+			if (count) {
+				cout << " : " << cnt;
+			}
+			cout << endl;
+			cnt = 1;
+			if (exportOutput) {
+				exportFile << previous<<", " << startID << ", "<<endID << "\n";
+			}
+			startID = endID + 1;
+		} else {
+			cnt++;
+		}
+		previous = current;
+		endID++;
+	}
+	if (previous) {
+		cout << previous;
+		if (count) {
+			cout << " : " << cnt;
+		}
+		cout << endl;
+		if (exportOutput) {
+			exportFile << previous<<", " << startID << ", "<<endID << "\n";
+		}
+	}
+}
 
 int main(int argc, char **argv) {
 	int c;
-	string query, inputFile, rolUser="a";
-	bool count=false;
-	bool pld=false;
-	bool pref=false;
-	bool qnames=false;
+	string query, inputFile, rolUser = "a";
 
+	string outFile = "output.csv";
 
-	while ((c = getopt(argc, argv, "hcdpqr:")) != -1) {
+	while ((c = getopt(argc, argv, "hcdpqr:e:")) != -1) {
 		switch (c) {
 		case 'h':
-		  help();
-		  break;
+			help();
+			break;
 		case 'c':
-		  count = true;
-		  break;
+			count = true;
+			break;
 		case 'd':
-		  pld = true;
-		  break;
+			pld = true;
+			break;
 		case 'p':
-		  pref = true;
-		  break;
+			pref = true;
+			break;
 		case 'q':
-		  qnames = true;
-		  break;
+			qnames = true;
+			break;
+		case 'e':
+			outFile = optarg;
+			exportOutput = true;
+			break;
 		case 'r':
-		  rolUser = optarg;
-		  break;		
+			rolUser = optarg;
+			break;
 		default:
-		  cout << "ERROR: Unknown option:" << c << endl;
-		  help();
-		  return 1;
+			cout << "ERROR: Unknown option:" << c << endl;
+			help();
+			return 1;
 		}
 	}
 
@@ -95,79 +159,129 @@ int main(int argc, char **argv) {
 
 		Dictionary *dict = hdt->getDictionary();
 
-		IteratorUCharString * itSol;
+		IteratorUCharString * itSol=NULL;
+		IteratorUCharString * itSol2=NULL;
+		IteratorUCharString * itSol3=NULL;
+		IteratorUCharString * itSol4=NULL;
 
 		switch (rolUser[0]) {
 		case 'o':
-		  itSol =  new MergeIteratorUCharString(dict->getShared(),dict->getObjects());
-		  break;
+			if (!exportOutput) {
+				itSol = new MergeIteratorUCharString(dict->getShared(),
+						dict->getObjects());
+			} else {
+				itSol = dict->getShared();
+				itSol2 = dict->getObjects();
+			}
+			break;
 		case 's':
-		  itSol =  new MergeIteratorUCharString(dict->getShared(),dict->getSubjects());
-		  break;
+			if (!exportOutput) {
+				itSol = new MergeIteratorUCharString(dict->getShared(),
+						dict->getSubjects());
+			} else {
+				itSol = dict->getShared();
+				itSol2 = dict->getSubjects();
+			}
+			break;
 		case 'p':
-		  itSol = dict->getPredicates();
-		  break;
+			itSol = dict->getPredicates();
+			break;
 		case 'h':
-		  itSol = dict->getShared();
-		  break;
+			itSol = dict->getShared();
+			break;
 		case 'a':
-		  itSol = new MergeIteratorUCharString(new MergeIteratorUCharString(new MergeIteratorUCharString(dict->getShared(),dict->getObjects()),dict->getSubjects()),dict->getPredicates());
-		  break;
+			if (!exportOutput) {
+				itSol = new MergeIteratorUCharString(
+						new MergeIteratorUCharString(
+								new MergeIteratorUCharString(dict->getShared(),
+										dict->getObjects()),
+								dict->getSubjects()), dict->getPredicates());
+			} else {
+				itSol = dict->getShared();
+				itSol2 = dict->getSubjects();
+				itSol3 = dict->getObjects();
+				itSol4 = dict->getPredicates();
+			}
+			break;
 		default:
-		  cout << "ERROR: Unknown option" << endl;
-		  help();
-		  return 1;
-		}
-		    
-		char* previous = 0;
-		char* current = 0;
-		char literal[] = "LITERAL";
-		char otherIRI[] = "OTHER-IRI"; // non http or https IRI (for option PLD)
-		char bnode[] = "BNODE";
-		unsigned long int cnt = 0;
-
-
-		if ( (pld + qnames + pref) > 1 ) {
-		  cout << "ERROR: you cannot choose options -p -q or -d concurrently " << endl;
-		}
-		
-		while (itSol->hasNext()) {
-		  current = reinterpret_cast<char*>(itSol->next());		 
-		  if (pref || qnames) {
-				current = process_term_preffix_qname(literal, bnode, pref, current);
-		  } else if(pld) {
-				current = process_term_pld(literal, bnode, otherIRI, current);
-		  }
-		  
-		  if( !previous ){
-		    previous = current;
-		    cnt++;
-		  }
-	  
-		  if ( strcmp(previous,current) ) {
-		    cout << previous;
-		    if (count) {
-		      cout << " : " << cnt;
-		    }
-		    cout << endl;
-		    cnt = 1;
-		  } else {
-		    cnt++;
-		  }
-		  previous = current;
+			cout << "ERROR: Unknown option" << endl;
+			help();
+			return 1;
 		}
 
-		if( previous ) {
-		    cout << previous;
-		    if (count) {
-		      cout << " : " << cnt;
-		    }
-		    cout << endl;
+		if ((pld + qnames + pref) > 1) {
+			cout << "ERROR: you cannot choose options -p -q or -d concurrently "
+					<< endl;
 		}
-		
+
+		ofstream exportFile;
+		int startID = 1;
+		string name = "";
+
+		if (!exportOutput) //just a simple parse on the iterator
+			parse_terms_iterator(exportFile, startID, itSol);
+		else {
+			// check the rol
+			if (rolUser == "p") {
+
+				name.append(outFile).append("-").append("p").append(".csv");
+				exportFile.open(name.c_str());
+				print_CSV_header(exportFile);
+				parse_terms_iterator(exportFile, startID, itSol);
+				exportFile.close();
+			} else { // s, o or shared
+
+				// first check the shared
+				name.append(outFile).append("-").append("h").append(".csv");
+				exportFile.open(name.c_str());
+				print_CSV_header(exportFile);
+				parse_terms_iterator(exportFile, startID, itSol);
+				exportFile.close();
+				name = "";
+				if (rolUser == "s" || rolUser == "a") {
+					// first check the subjects
+					name.append(outFile).append("-").append("s").append(".csv");
+					exportFile.open(name.c_str());
+					print_CSV_header(exportFile);
+					parse_terms_iterator(exportFile, startID, itSol2);
+					exportFile.close();
+					name = "";
+
+					if (rolUser == "a") {
+						// check the objects, then the predicates
+						name.append(outFile).append("-").append("o").append(
+								".csv");
+						exportFile.open(name.c_str());
+						print_CSV_header(exportFile);
+						parse_terms_iterator(exportFile, startID, itSol3);
+						exportFile.close();
+						name = "";
+
+						//finally, the predicates
+						name.append(outFile).append("-").append("p").append(
+								".csv");
+						exportFile.open(name.c_str());
+						parse_terms_iterator(exportFile, startID, itSol4);
+						exportFile.close();
+					}
+				}
+				else if (rolUser=="o"){
+					// check the objects
+					name.append(outFile).append("-").append("o").append(
+							".csv");
+					exportFile.open(name.c_str());
+					print_CSV_header(exportFile);
+					parse_terms_iterator(exportFile, startID, itSol2);
+					exportFile.close();
+				}
+
+			}
+
+		}
+
 		delete itSol;
 		delete hdt;
-		
+
 	} catch (std::exception& e) {
 		cerr << "ERROR: " << e.what() << endl;
 	}
