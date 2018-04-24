@@ -1,5 +1,5 @@
 /*
- * File: BitmapTriples.hpp
+MiddleWaveletRangeIterator * File: BitmapTriples.hpp
  * Last modified: $Date$
  * Revision: $Revision$
  * Last modified by: $Author$
@@ -136,6 +136,7 @@ public:
 	friend class BitmapTriplesSearchIterator;
 	friend class BitmapTriplesRangeIterator;
 	friend class MiddleWaveletIterator;
+	friend class MiddleWaveletRangeIterator;
 	friend class IteratorY;
 	friend class ObjectIndexIterator;
 	friend class ObjectIndexRangeIterator;
@@ -352,6 +353,40 @@ private:
 	unsigned int getY(unsigned int index);
 public:
 	ObjectIndexRangeIterator(BitmapTriples *triples,  unsigned int start, unsigned int end);
+
+	bool hasNext();
+	TripleID *next();
+	bool hasPrevious();
+	TripleID *previous();
+	void goToStart();
+    size_t estimatedNumResults();
+	ResultEstimationType numResultEstimation();
+	TripleComponentOrder getOrder();
+	bool canGoTo();
+	void goTo(unsigned int pos);
+	void skip(unsigned int pos);
+	bool findNextOccurrence(unsigned int value, unsigned char component);
+	bool isSorted(TripleComponentRole role);
+};
+
+
+class MiddleWaveletRangeIterator : public IteratorTripleID {
+private:
+	BitmapTriples *triples;
+	TripleID returnTriple;
+	unsigned int start,end,currentY;
+
+	AdjacencyList adjY, adjZ;
+    PredicateIndex *predicateIndex;
+	unsigned int posY, posZ;
+	unsigned int predicateOcurrence, predicateMaxOcurrence, numOcurrences,totalOcurrences;
+	unsigned int prevZ, nextZ;
+	unsigned int maxZ;
+	unsigned int x, y, z;
+
+	void updateOutput();
+public:
+	MiddleWaveletRangeIterator(BitmapTriples *triples, unsigned int start, unsigned int end);
 
 	bool hasNext();
 	TripleID *next();
