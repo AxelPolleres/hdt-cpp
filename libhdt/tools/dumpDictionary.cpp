@@ -19,6 +19,7 @@
 #include <fstream>
 
 #include "../src/util/StopWatch.hpp"
+#include "../src/util/terms.hpp"
 
 using namespace hdt;
 using namespace std;
@@ -40,6 +41,10 @@ void help() {
 	// TODO: add a verbose option:
 	//cout << "\t-v\tVerbose output" << endl;
 }
+
+
+
+
 
 int main(int argc, char **argv) {
 	int c;
@@ -120,11 +125,7 @@ int main(int argc, char **argv) {
 		char otherIRI[] = "OTHER-IRI"; // non http or https IRI (for option PLD)
 		char bnode[] = "BNODE";
 		unsigned long int cnt = 0;
-		char *pscheme; // position of enmd of the URI scheme
-		char *ph; // position of last hash
-		char *ps; // position of last slash
-		char *pc; // position of last colon
-		char *p; // position of namespace separator
+
 
 		if ( (pld + qnames + pref) > 1 ) {
 		  cout << "ERROR: you cannot choose options -p -q or -d concurrently " << endl;
@@ -133,104 +134,9 @@ int main(int argc, char **argv) {
 		while (itSol->hasNext()) {
 		  current = reinterpret_cast<char*>(itSol->next());		 
 		  if (pref || qnames) {
-		    pscheme=0;
-	            ph=0; // position of last hash
-		    ps=0; // position of last slash
-		    pc=0; // position of last colon
-		    p=0; // position of namespace separator
-		    // find Prefix-Qnames separator:
-
-		    // ignore literals or weird identifiers for qname or prefix search.!
-		    if( current[0]=='"' ) {
-		      current = literal;		      
-		    } else if( current[0]=='_' ) {
-		      current = bnode;		      
-		    } else {
-		      // look for fartherst right '#','/', or ':'
-		      pscheme = strchr(current, ':');
-		      //cout << "x1" << endl; 
-		      while ( pscheme != NULL && *(++pscheme) == '/' )
-			{
-			  // find the last position of the scheme part of the URI.
-			}
-		      //cout << "x2" << endl; 
-		      if (pscheme == NULL )
-			{
-			  pscheme = current;
-			}
-                      //cout << "x3" << endl; 
-		      ps = strrchr(pscheme, '/');
-		      ph = strrchr(pscheme, '#');
-		      pc = strrchr(pscheme, ':');
-		      if(ph || pc || ps) {
-			p = (pc > ph) ? pc : ph; // set p to the max of ph,pc,ps
-			p = (ps > p ) ? ps : p;
-			if(pref) { // print prefix only
-			   //TODO: Is that evil? i.e. does it cause memory troubles to simply overwrite a character in the middle with 0?
-			   *(p+1) = 0;
-			} else { // print qname only
-			  current = (p+1);
-			}
-		      }
-		    }
+				current = process_term_preffix_qname(literal, bnode, pref, current);
 		  } else if(pld) {
-		    if( current[0]=='"' ) {
-		      current = literal;		      
-		    } else if( current[0]=='_' ) {
-		      current = bnode;		      
-		    } else {
-		      int start = 0;
-		      // do search HTTP and HTTPS URIS for for, server-addresses-or-(sub-)domains 
-		      if( strncasecmp(current, "http://", 7) == 0 )
-			{ start = 7 ; }
-		      else if( strncasecmp(current, "https://", 8) == 0 )
-			{ start = 8 ; }
-		      
-		      if(start)
-			{
-			  // Note: we do not really collect pay-level-domains here yet,
-			  // but rather "server-addresses-or-(sub-)domains":
-			  current+=start;
-
-			  // strip off anythin after the domain/host name: 
-			  p = strchr(current, '/');		     
-			  if (p==NULL) {
-			    p = strchr(current, '#');
-			  }
-			  
-			  if ( p != NULL )
-			    {
-			      *p = 0;			      
-			    }
-
-			  // strip off a leading user-name:
-			  p = NULL;
-			  p = strchr(current, '@');
-			  if ( p != NULL )
-			    {
-			      current = p+1;
-			    }
-
-			  // strip off a trailing port number:
-			  p = current + strlen(current) - 1 ;
-			  //cout << current << " ! " << p << endl ;
-			  while( isdigit(p[0]) )
-			   {
-			     //cout << "!! " << p << endl ;
-			     p--;
-			   }
-			   if( *p == ':' )
-			     {
-			       *p = 0;
-			     }
-		
-			  // cout << "found a HTTPS or HTTP IRI with PLD: '" << current << "'" << endl;
-			}
-		      else
-			{
-			  current = otherIRI; 
-			}
-		    }
+				current = process_term_pld(literal, bnode, otherIRI, current);
 		  }
 		  
 		  if( !previous ){
