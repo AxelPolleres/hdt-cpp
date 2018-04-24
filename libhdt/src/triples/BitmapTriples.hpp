@@ -96,6 +96,8 @@ public:
 	 */
     size_t getNumberOfElements() const;
 
+    IteratorTripleID *searchRange(unsigned int start,unsigned int end,TripleComponentRole rol);
+
     size_t size() const;
 
 	/**
@@ -132,6 +134,7 @@ public:
 	TripleComponentOrder getOrder() const;
 
 	friend class BitmapTriplesSearchIterator;
+	friend class BitmapTriplesRangeIterator;
 	friend class MiddleWaveletIterator;
 	friend class IteratorY;
 	friend class ObjectIndexIterator;
@@ -289,6 +292,44 @@ public:
     bool hasNext();
     TripleID *next();
 };
+
+
+class BitmapTriplesRangeIterator : public IteratorTripleID {
+private:
+	BitmapTriples *triples;
+	TripleID returnTriple;
+	unsigned int start,end;
+
+	AdjacencyList adjY, adjZ;
+    size_t posY, posZ;
+    size_t minY, maxY, minZ, maxZ;
+    size_t nextY, nextZ, prevY, prevZ;
+	unsigned int x, y, z;
+
+	void findRange();
+	void getNextTriple();
+	void getPreviousTriple();
+
+	void updateOutput();
+public:
+	BitmapTriplesRangeIterator(BitmapTriples *triples, unsigned int start, unsigned int end);
+
+	bool hasNext();
+	TripleID *next();
+	bool hasPrevious();
+	TripleID *previous();
+	void goToStart();
+	void goToY();
+    size_t estimatedNumResults();
+	ResultEstimationType numResultEstimation();
+	TripleComponentOrder getOrder();
+	bool canGoTo();
+	void goTo(unsigned int pos);
+	void skip(unsigned int pos);
+	bool findNextOccurrence(unsigned int value, unsigned char component);
+	bool isSorted(TripleComponentRole role);
+};
+
 
 } // namespace hdt
 
