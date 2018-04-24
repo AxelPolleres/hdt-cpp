@@ -365,6 +365,7 @@ void MiddleWaveletIterator::updateOutput() {
 bool MiddleWaveletIterator::hasNext()
 {
     return posZ<maxZ && (predicateOcurrence<numOcurrences || posZ <= nextZ);
+
 }
 
 TripleID *MiddleWaveletIterator::next()
@@ -1418,6 +1419,174 @@ bool ObjectIndexRangeIterator::isSorted(TripleComponentRole role) {
 	    return true;
 	case SUBJECT:
 	    return true;
+	}
+    }
+
+    throw std::runtime_error("Order not supported");
+}
+
+
+
+//RANGE
+MiddleWaveletRangeIterator::MiddleWaveletRangeIterator(BitmapTriples *trip, unsigned int start, unsigned int end) :
+    triples(trip),
+    start(start),
+	end(end),
+    adjY(trip->arrayY, trip->bitmapY),
+    adjZ(trip->arrayZ, trip->bitmapZ),
+    predicateIndex(trip->predicateIndex),
+    predicateOcurrence(1)
+{
+
+	 if (start>end)
+		    	throw std::runtime_error(string("The provided range is incorrect, end<start"));
+
+
+    // Find largest position of Z
+    maxZ = trip->arrayZ->getNumberOfElements();
+
+    //get total Occurrences
+    for (int i=start;i<=end;i++){
+    	totalOcurrences += predicateIndex->getNumAppearances(i);
+    }
+    predicateMaxOcurrence = predicateIndex->getNumAppearances(start);
+
+    numOcurrences=1;
+    goToStart();
+}
+
+void MiddleWaveletRangeIterator::updateOutput() {
+    // Convert local order to SPO
+    returnTriple.setAll(x,y,z);
+
+    swapComponentOrder(&returnTriple, triples->order, SPO);
+}
+
+bool MiddleWaveletRangeIterator::hasNext()
+{
+	/*cout<<endl<<"posZ:"<<posZ<<endl;
+	cout<<"maxZ:"<<maxZ<<endl;
+	cout<<"numOcurrences:"<<numOcurrences<<endl;
+	cout<<"totalOcurrences:"<<totalOcurrences<<endl;
+	cout<<"nextZ:"<<nextZ<<endl;*/
+    return  (numOcurrences<totalOcurrences || posZ <= nextZ);
+}
+
+TripleID *MiddleWaveletRangeIterator::next()
+{
+   // cerr << "nextTriple: " << predicateOcurrence << ", " << prevZ << ", " << posZ << ", " << nextZ << endl;
+    if(posZ>nextZ) {
+
+        if (predicateOcurrence>=predicateMaxOcurrence){
+        	predicateOcurrence=1;
+        	currentY+=1;
+        	predicateMaxOcurrence = predicateIndex->getNumAppearances(currentY);
+        }
+        else{
+        	  predicateOcurrence++;
+        }
+        numOcurrences++;
+        posY = predicateIndex->getAppearance(currentY, predicateOcurrence);
+
+        posZ = prevZ = adjZ.find(posY);
+        nextZ = adjZ.last(posY);
+        //nextZ = adjZ.findNext(prevZ)-1;
+
+        x = adjY.findListIndex(posY)+1;
+        y = adjY.get(posY);
+        z = adjZ.get(posZ);
+    } else {
+        z = adjZ.get(posZ);
+    }
+    posZ++;
+
+    updateOutput();
+    return &returnTriple;
+}
+
+bool MiddleWaveletRangeIterator::hasPrevious()
+{
+    return predicateOcurrence>1 || posZ>=prevZ;
+}
+
+TripleID *MiddleWaveletRangeIterator::previous()
+{
+	throw std::runtime_error("not implemented");
+}
+
+void MiddleWaveletRangeIterator::goToStart()
+{
+    predicateOcurrence = 1;
+    posY = predicateIndex->getAppearance(start, predicateOcurrence);
+
+    posZ = prevZ = adjZ.find(posY);
+    nextZ = adjZ.last(posY);
+    //nextZ = adjZ.findNext(prevZ)-1;
+
+    x = adjY.findListIndex(posY)+1;
+    y = adjY.get(posY);
+    z = adjZ.get(posZ);
+
+    currentY=start;
+}
+
+bool MiddleWaveletRangeIterator::canGoTo() {
+    return true;
+}
+
+void MiddleWaveletRangeIterator::goTo(unsigned int pos) {
+	throw std::runtime_error("not implemented");
+}
+
+void MiddleWaveletRangeIterator::skip(unsigned int pos) {
+	throw std::runtime_error("not implemented");
+}
+
+size_t MiddleWaveletRangeIterator::estimatedNumResults()
+{
+	if (triples->predicateCount!=NULL){
+		unsigned int numtriples=0;
+		//get total count
+		    for (int i=start;i<=end;i++){
+		    	numtriples +=  triples->predicateCount->get(i-1);
+		    }
+		    return numtriples;
+	}
+    return totalOcurrences;
+}
+
+ResultEstimationType MiddleWaveletRangeIterator::numResultEstimation()
+{
+    if(triples->predicateIndex!=NULL && triples->predicateCount!=NULL) {
+	return EXACT;
+    }
+    return APPROXIMATE;
+}
+
+TripleComponentOrder MiddleWaveletRangeIterator::getOrder() {
+    return triples->order;
+}
+
+bool MiddleWaveletRangeIterator::findNextOccurrence(unsigned int value, unsigned char component) {
+	throw std::runtime_error("not implemented");
+}
+
+bool MiddleWaveletRangeIterator::isSorted(TripleComponentRole role) {
+    if(triples->order==SPO) {
+	switch(role) {
+	case SUBJECT:
+	case PREDICATE:
+	    return true;
+	case OBJECT:
+	    return false;
+	}
+    } else if(triples->order==OPS) {
+	switch(role) {
+	case OBJECT:
+	case PREDICATE:
+	    return true;
+	case SUBJECT:
+	    return false;
 	}
     }
 
