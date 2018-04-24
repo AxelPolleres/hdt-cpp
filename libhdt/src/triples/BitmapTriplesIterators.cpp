@@ -1243,4 +1243,185 @@ bool BitmapTriplesRangeIterator::isSorted(TripleComponentRole role) {
 
 
 
+// RANGE
+ObjectIndexRangeIterator::ObjectIndexRangeIterator(BitmapTriples *trip, unsigned int start, unsigned int end) :
+    triples(trip),
+    adjY(trip->arrayY, trip->bitmapY),
+    adjZ(trip->arrayZ, trip->bitmapZ),
+	start(start),
+	end(end),
+    adjIndex(trip->arrayIndex, trip->bitmapIndex)
+{
+
+	 if (start>end)
+	    	throw std::runtime_error(string("The provided range is incorrect, end<start"));
+
+
+    calculateRange();
+    goToStart();
+}
+
+unsigned int ObjectIndexRangeIterator::getPosZ(unsigned int indexObjectPos) {
+#ifdef SAVE_ADJ_LIST
+    unsigned int posZ=0;
+    unsigned int posAdjList = adjIndex.get(indexObjectPos);
+
+    try {
+        posZ = adjZ.find(posAdjList, z);
+//        z = adjZ.get(posZ);
+    } catch (std::exception& e) {
+	cerr << "posZ not found in Index!!!!" << endl;
+        posZ = adjZ.find(posAdjList);
+    }
+
+#else
+    unsigned int posZ = adjIndex.get(index);
+
+    while( (z=adjZ.get(posZ))!=patZ) {
+        posZ++;
+    }
+#endif
+    return posZ;
+}
+
+unsigned int ObjectIndexRangeIterator::getY(unsigned int index) {
+
+#ifdef SAVE_ADJ_LIST
+    unsigned int posAdjList = adjIndex.get(index);
+    unsigned int myY = adjY.get(posAdjList);
+    return myY;
+#else
+    unsigned int posZ = adjIndex.get(index);
+    unsigned int posY = adjZ.findListIndex(posZ);
+    unsigned int myY = adjY.get(posY);
+    return myY;
+#endif
+
+}
+
+void ObjectIndexRangeIterator::updateOutput() {
+    // Convert local order to SPO
+    returnTriple.setAll(x,y,z);
+
+    swapComponentOrder(&returnTriple, triples->order, SPO);
+}
+
+bool ObjectIndexRangeIterator::hasNext()
+{
+    return posIndex <= maxIndex && maxIndex >= 0;
+}
+
+TripleID *ObjectIndexRangeIterator::next()
+{
+    unsigned int posY = adjIndex.get(posIndex);
+
+    z =adjIndex.findListIndex(posIndex)+1;
+    y = adjY.get(posY);
+    x = adjY.findListIndex(posY)+1;
+
+    posIndex++;
+
+    updateOutput();
+    return &returnTriple;
+}
+
+bool ObjectIndexRangeIterator::hasPrevious()
+{
+    return posIndex>minIndex;
+}
+
+TripleID *ObjectIndexRangeIterator::previous()
+{
+    posIndex--;
+
+    unsigned int posY = adjIndex.get(posIndex);
+
+    z =adjIndex.findListIndex(posIndex);
+    y = adjY.get(posY);
+    x = adjY.findListIndex(posY)+1;
+
+    updateOutput();
+    return &returnTriple;
+}
+
+void ObjectIndexRangeIterator::calculateRange() {
+
+    minIndex=adjIndex.find(start-1);
+    maxIndex=adjIndex.last(end-1);
+    //maxIndex=adjIndex.findNext(minIndex)-1;
+
+}
+
+void ObjectIndexRangeIterator::goToStart()
+{
+    posIndex=minIndex;
+}
+
+size_t ObjectIndexRangeIterator::estimatedNumResults()
+{
+    return maxIndex-minIndex+1;
+}
+
+ResultEstimationType ObjectIndexRangeIterator::numResultEstimation()
+{
+    return EXACT;
+}
+
+TripleComponentOrder ObjectIndexRangeIterator::getOrder() {
+    return invertOrder(triples->order);
+}
+
+bool ObjectIndexRangeIterator::canGoTo()
+{
+    return true;
+}
+
+void ObjectIndexRangeIterator::goTo(unsigned int pos)
+{
+    if(pos>maxIndex) {
+    	throw std::runtime_error(string("Given index: ") + NumberToString(pos) + ". Cannot go beyond last element index: " + NumberToString(maxIndex));
+    }
+    posIndex = pos;
+}
+
+void ObjectIndexRangeIterator::skip(unsigned int pos)
+{
+	goTo(minIndex+pos);
+}
+
+bool ObjectIndexRangeIterator::findNextOccurrence(unsigned int value, unsigned char component) {
+    if(component==1) {
+
+    } else if(component==2) {
+        // Binary search the predicate within the object list.
+
+    }
+    return true;
+}
+
+
+bool ObjectIndexRangeIterator::isSorted(TripleComponentRole role) {
+    if(triples->order==SPO) {
+	switch(role) {
+	case SUBJECT:
+	    return false;
+	case PREDICATE:
+	    return true;
+	case OBJECT:
+	    return true;
+	}
+    } else if(triples->order==OPS) {
+	switch(role) {
+	case OBJECT:
+	    return false;
+	case PREDICATE:
+	    return true;
+	case SUBJECT:
+	    return true;
+	}
+    }
+
+    throw std::runtime_error("Order not supported");
+}
+
 }

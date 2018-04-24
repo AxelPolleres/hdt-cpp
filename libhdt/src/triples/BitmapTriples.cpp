@@ -646,6 +646,9 @@ IteratorTripleID *BitmapTriples::searchRange(unsigned int start,unsigned int end
 	if (rol==SUBJECT){
 		return new BitmapTriplesRangeIterator(this,start,end);
 	}
+	else if (rol==OBJECT){
+		return new ObjectIndexRangeIterator(this,start,end);
+	}
 
 	return new BitmapTriplesRangeIterator(this,start,end);
 	/*
