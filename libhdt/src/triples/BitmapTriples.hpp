@@ -138,6 +138,7 @@ public:
 	friend class MiddleWaveletIterator;
 	friend class IteratorY;
 	friend class ObjectIndexIterator;
+	friend class ObjectIndexRangeIterator;
     friend class PredicateIndexWavelet;
     friend class PredicateIndexArray;
     friend class BTInterleavedIterator;
@@ -330,6 +331,42 @@ public:
 	bool isSorted(TripleComponentRole role);
 };
 
+
+
+
+class ObjectIndexRangeIterator : public IteratorTripleID {
+private:
+	BitmapTriples *triples;
+	TripleID returnTriple;
+	unsigned int start,end;
+
+	AdjacencyList adjY, adjZ, adjIndex;
+    size_t posIndex;
+    //size_t predicateOcurrence, numOcurrences;
+	long long minIndex, maxIndex;
+	unsigned int x, y, z;
+
+	void updateOutput();
+	void calculateRange();
+	unsigned int getPosZ(unsigned int index);
+	unsigned int getY(unsigned int index);
+public:
+	ObjectIndexRangeIterator(BitmapTriples *triples,  unsigned int start, unsigned int end);
+
+	bool hasNext();
+	TripleID *next();
+	bool hasPrevious();
+	TripleID *previous();
+	void goToStart();
+    size_t estimatedNumResults();
+	ResultEstimationType numResultEstimation();
+	TripleComponentOrder getOrder();
+	bool canGoTo();
+	void goTo(unsigned int pos);
+	void skip(unsigned int pos);
+	bool findNextOccurrence(unsigned int value, unsigned char component);
+	bool isSorted(TripleComponentRole role);
+};
 
 } // namespace hdt
 
