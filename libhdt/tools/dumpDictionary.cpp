@@ -180,6 +180,7 @@ int main(int argc, char **argv) {
 		      current = bnode;		      
 		    } else {
 		      int start = 0;
+		      // do search HTTP and HTTPS URIS for for, server-addresses-or-(sub-)domains 
 		      if( strncasecmp(current, "http://", 7) == 0 )
 			{ start = 7 ; }
 		      else if( strncasecmp(current, "https://", 8) == 0 )
@@ -187,7 +188,7 @@ int main(int argc, char **argv) {
 		      
 		      if(start)
 			{
-			  // Note: we do not Really collect pay-level-domains here yet,
+			  // Note: we do not really collect pay-level-domains here yet,
 			  // but rather "server-addresses-or-(sub-)domains":
 			  current+=start;
 
@@ -209,6 +210,20 @@ int main(int argc, char **argv) {
 			    {
 			      current = p+1;
 			    }
+
+			  // strip off a trailing port number:
+			  p = current + strlen(current) - 1 ;
+			  //cout << current << " ! " << p << endl ;
+			  while( isdigit(p[0]) )
+			   {
+			     //cout << "!! " << p << endl ;
+			     p--;
+			   }
+			   if( *p == ':' )
+			     {
+			       *p = 0;
+			     }
+		
 			  // cout << "found a HTTPS or HTTP IRI with PLD: '" << current << "'" << endl;
 			}
 		      else
