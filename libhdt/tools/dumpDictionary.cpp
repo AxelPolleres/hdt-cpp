@@ -14,6 +14,7 @@
 #include <getopt.h>
 #include <string>
 #include <string.h>
+#include <strings.h> // strncasecmp is usually in strongs.h, but sometimes in string.h. better include both?
 #include <iostream>
 #include <fstream>
 
@@ -31,6 +32,7 @@ void signalHandler(int sig) {
 void help() {
 	cout << "$ dumpDictionary <HDT file>" << endl;
 	cout << "\t-h\t\t\t\tThis help" << endl;
+	cout << "\t-d\t\t\t\tPrint all distinct Pay-level-domains (PLDs occurring in HTTP and HTTPS IRIs" << endl;
 	cout << "\t-p\t\t\t\tPrint all distinct non-qname prefixes" << endl;
 	cout << "\t-q\t\t\t\tPrint all qnames per prefixes (that is, same qname per different prefix will appear duplicated!)" << endl;
 	cout << "\t-r\t<rol>\t\t\tRol (s|p|o|h|a), where a=all, h=shared." << endl;
@@ -43,17 +45,21 @@ int main(int argc, char **argv) {
 	int c;
 	string query, inputFile, rolUser="a";
 	bool count=false;
+	bool pld=false;
 	bool pref=false;
 	bool qnames=false;
 
 
-	while ((c = getopt(argc, argv, "hcpqr:")) != -1) {
+	while ((c = getopt(argc, argv, "hcdpqr:")) != -1) {
 		switch (c) {
 		case 'h':
 		  help();
 		  break;
 		case 'c':
 		  count = true;
+		  break;
+		case 'd':
+		  pld = true;
 		  break;
 		case 'p':
 		  pref = true;
@@ -111,6 +117,7 @@ int main(int argc, char **argv) {
 		char* previous = 0;
 		char* current = 0;
 		char literal[] = "LITERAL";
+		char otherIRI[] = "OTHER-IRI"; // non http or https IRI (for option PLD)
 		char bnode[] = "BNODE";
 		unsigned long int cnt = 0;
 		char *pscheme; // position of enmd of the URI scheme
@@ -118,9 +125,13 @@ int main(int argc, char **argv) {
 		char *ps; // position of last slash
 		char *pc; // position of last colon
 		char *p; // position of namespace separator
+
+		if ( (pld + qnames + pref) > 1 ) {
+		  cout << "ERROR: you cannot choose options -p -q or -d concurrently " << endl;
+		}
 		
 		while (itSol->hasNext()) {
-		 current = reinterpret_cast<char*>(itSol->next());		 
+		  current = reinterpret_cast<char*>(itSol->next());		 
 		  if (pref || qnames) {
 		    pscheme=0;
 	            ph=0; // position of last hash
@@ -148,7 +159,6 @@ int main(int argc, char **argv) {
 			  pscheme = current;
 			}
                       //cout << "x3" << endl; 
-
 		      ps = strrchr(pscheme, '/');
 		      ph = strrchr(pscheme, '#');
 		      pc = strrchr(pscheme, ':');
@@ -156,13 +166,55 @@ int main(int argc, char **argv) {
 			p = (pc > ph) ? pc : ph; // set p to the max of ph,pc,ps
 			p = (ps > p ) ? ps : p;
 			if(pref) { // print prefix only
-			  
 			   //TODO: Is that evil? i.e. does it cause memory troubles to simply overwrite a character in the middle with 0?
 			   *(p+1) = 0;
 			} else { // print qname only
 			  current = (p+1);
 			}
 		      }
+		    }
+		  } else if(pld) {
+		    if( current[0]=='"' ) {
+		      current = literal;		      
+		    } else if( current[0]=='_' ) {
+		      current = bnode;		      
+		    } else {
+		      int start = 0;
+		      if( strncasecmp(current, "http://", 7) == 0 )
+			{ start = 7 ; }
+		      else if( strncasecmp(current, "https://", 8) == 0 )
+			{ start = 8 ; }
+		      
+		      if(start)
+			{
+			  // Note: we do not Really collect pay-level-domains here yet,
+			  // but rather "server-addresses-or-(sub-)domains":
+			  current+=start;
+
+			  // strip off anythin after the domain/host name: 
+			  p = strchr(current, '/');		     
+			  if (p==NULL) {
+			    p = strchr(current, '#');
+			  }
+			  
+			  if ( p != NULL )
+			    {
+			      *p = 0;			      
+			    }
+
+			  // strip off a leading user-name:
+			  p = NULL;
+			  p = strchr(current, '@');
+			  if ( p != NULL )
+			    {
+			      current = p+1;
+			    }
+			  // cout << "found a HTTPS or HTTP IRI with PLD: '" << current << "'" << endl;
+			}
+		      else
+			{
+			  current = otherIRI; 
+			}
 		    }
 		  }
 		  
