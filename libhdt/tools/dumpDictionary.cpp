@@ -34,7 +34,7 @@ char literal[] = "LITERAL";
 char otherIRI[] = "OTHER-IRI"; // non http or https IRI (for option PLD)
 char bnode[] = "BNODE";
 char delim=' ';
-bool count = false;
+bool counts = false;
 bool pld = false;
 bool pref = false;
 bool qnames = false;
@@ -83,7 +83,7 @@ void parse_terms_iterator(ofstream& exportFile, int startID,
 		}
 		if (strcmp(previous, current)) {
 			cout << previous;
-			if (count) {
+			if (counts) {
 				cout << " : " << cnt;
 			}
 			cout << endl;
@@ -100,7 +100,7 @@ void parse_terms_iterator(ofstream& exportFile, int startID,
 	}
 	if (previous) {
 		cout << previous;
-		if (count) {
+		if (counts) {
 			cout << " : " << cnt;
 		}
 		cout << endl;
@@ -122,7 +122,7 @@ int main(int argc, char **argv) {
 			help();
 			break;
 		case 'c':
-			count = true;
+			counts = true;
 			break;
 		case 'd':
 			pld = true;
