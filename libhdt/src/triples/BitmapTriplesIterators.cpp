@@ -1445,6 +1445,7 @@ MiddleWaveletRangeIterator::MiddleWaveletRangeIterator(BitmapTriples *trip, unsi
     // Find largest position of Z
     maxZ = trip->arrayZ->getNumberOfElements();
 
+    totalOcurrences=0;
     //get total Occurrences
     for (int i=start;i<=end;i++){
     	totalOcurrences += predicateIndex->getNumAppearances(i);
@@ -1468,13 +1469,14 @@ bool MiddleWaveletRangeIterator::hasNext()
 	cout<<"maxZ:"<<maxZ<<endl;
 	cout<<"numOcurrences:"<<numOcurrences<<endl;
 	cout<<"totalOcurrences:"<<totalOcurrences<<endl;
-	cout<<"nextZ:"<<nextZ<<endl;*/
+	cout<<"nextZ:"<<nextZ<<endl;
+	*/
     return  (numOcurrences<totalOcurrences || posZ <= nextZ);
 }
 
 TripleID *MiddleWaveletRangeIterator::next()
 {
-   // cerr << "nextTriple: " << predicateOcurrence << ", " << prevZ << ", " << posZ << ", " << nextZ << endl;
+    //cerr << "nextTriple: " << predicateOcurrence << ", " << prevZ << ", " << posZ << ", " << nextZ << endl;
     if(posZ>nextZ) {
 
         if (predicateOcurrence>=predicateMaxOcurrence){
