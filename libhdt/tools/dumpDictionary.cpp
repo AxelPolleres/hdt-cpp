@@ -239,11 +239,13 @@ int main(int argc, char **argv) {
 				parse_terms_iterator(exportFile, startID, itSol);
 				exportFile.close();
 				name = "";
+				startID=hdt->getDictionary()->getNshared()+1;
 				if (rolUser == "s" || rolUser == "a") {
 					// first check the subjects
 					name.append(outFile).append("-").append("s").append(".csv");
 					exportFile.open(name.c_str());
 					print_CSV_header(exportFile);
+
 					parse_terms_iterator(exportFile, startID, itSol2);
 					exportFile.close();
 					name = "";
@@ -263,7 +265,7 @@ int main(int argc, char **argv) {
 								".csv");
 						exportFile.open(name.c_str());
 						print_CSV_header(exportFile);
-						parse_terms_iterator(exportFile, startID, itSol4);
+						parse_terms_iterator(exportFile, 1, itSol4);
 						exportFile.close();
 					}
 				}
