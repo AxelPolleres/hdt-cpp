@@ -60,7 +60,7 @@ char* process_term_preffix_qname(char literal[], char bnode[], bool pref,char* t
  * Extract the Pay Level Domain from a dictionary term
  */
 
-char* process_term_pld(char literal[], char bnode[], char otherIRI[],
+char* process_term_hostname(char literal[], char bnode[], char otherIRI[],
 		char* term) {
 	char *p; // position of namespace separator
 	if (term[0] == '"') {

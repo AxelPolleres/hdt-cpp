@@ -33,6 +33,7 @@ void signalHandler(int sig) {
 char literal[] = "LITERAL";
 char otherIRI[] = "OTHER-IRI"; // non http or https IRI (for option PLD)
 char bnode[] = "BNODE";
+char delim=' ';
 bool count = false;
 bool pld = false;
 bool pref = false;
@@ -59,7 +60,7 @@ void help() {
 }
 
 void print_CSV_header(ofstream& exportFile){
-	exportFile<<"<Term>, <Initial ID>, <End ID> \n";
+	exportFile<<"<Term>"<<delim<<"<Initial ID>"<<delim<<"<End ID> \n";
 }
 
 void parse_terms_iterator(ofstream& exportFile, int startID,
@@ -73,7 +74,7 @@ void parse_terms_iterator(ofstream& exportFile, int startID,
 		if (pref || qnames) {
 			current = process_term_preffix_qname(literal, bnode, pref, current);
 		} else if (pld) {
-			current = process_term_pld(literal, bnode, otherIRI, current);
+			current = process_term_hostname(literal, bnode, otherIRI, current);
 		}
 
 		if (!previous) {
@@ -88,7 +89,7 @@ void parse_terms_iterator(ofstream& exportFile, int startID,
 			cout << endl;
 			cnt = 1;
 			if (exportOutput) {
-				exportFile << previous<<", " << startID << ", "<<endID << "\n";
+				exportFile << previous<<delim<< startID << delim<<endID << "\n";
 			}
 			startID = endID + 1;
 		} else {
@@ -104,7 +105,7 @@ void parse_terms_iterator(ofstream& exportFile, int startID,
 		}
 		cout << endl;
 		if (exportOutput) {
-			exportFile << previous<<", " << startID << ", "<<endID << "\n";
+			exportFile << previous<<delim<< startID <<delim<<endID << "\n";
 		}
 	}
 }
@@ -261,6 +262,7 @@ int main(int argc, char **argv) {
 						name.append(outFile).append("-").append("p").append(
 								".csv");
 						exportFile.open(name.c_str());
+						print_CSV_header(exportFile);
 						parse_terms_iterator(exportFile, startID, itSol4);
 						exportFile.close();
 					}
