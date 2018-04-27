@@ -93,6 +93,7 @@ int main(int argc, char **argv) {
 
 		istringstream(testString) >> testId;
 
+		// Import the range of domains from the input file
 		Domains domains(importFileString,
 				hdt_file->getDictionary()->getNshared());
 

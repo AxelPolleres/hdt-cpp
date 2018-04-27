@@ -172,6 +172,10 @@ public:
 	string getDomain(unsigned int id, hdt::TripleComponentRole rol) {
 		string ret = "";
 
+		if (rol==hdt::PREDICATE){
+			return predicate_range[(id-1)]; // in predicates we store one id per position
+		}
+
 		//first, check the ID to see if we have to look in shared
 		if (id <= numShared) {
 			ret = getDomainInRol(id,shared_range,shared_terms);
