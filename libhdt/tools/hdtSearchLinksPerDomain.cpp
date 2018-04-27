@@ -172,8 +172,10 @@ int main(int argc, char **argv) {
 				}
 				string target_domain = domains.getDomain(triple.getObject(),
 						OBJECT);
-				cout << "LINK " << count << ":" << origin_domain << " --> "
+				if (verbose){
+					cout << "LINK " << count << ":" << origin_domain << " --> "
 						<< target_domain << endl;
+				}
 				count++;
 
 				//store in the maps
