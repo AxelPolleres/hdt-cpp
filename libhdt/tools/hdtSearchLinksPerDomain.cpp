@@ -38,8 +38,8 @@ vector<string> split(const string &s, char delim) {
 	return tokens;
 }
 
-vector<string> colors = { "#e6194b", "#3cb44b", "#ffe119", "#0082c8", "#f58231",
-		"#911eb4", "#46f0f0", "#f032e6", "#d2f53c", "#fabebe", "#008080",
+vector<string> colors = { "#f032e6", "#d2f53c", "#fabebe", "#008080", "#e6194b",
+		"#3cb44b", "#ffe119", "#0082c8", "#f58231", "#911eb4", "#46f0f0",
 		"#e6beff", "#aa6e28", "#fffac8", "#800000", "#aaffc3", "#808000",
 		"#ffd8b1", "#000080", "#808080", "#FFFFFF", "#000000" };
 // different colors from https://sashat.me/2017/01/11/list-of-20-simple-distinct-colors/
@@ -81,6 +81,8 @@ void help() {
 			<< "\t-m\t<minLinks>\t\t\tExport only those domains with at least minLinks (default: 50)"
 			<< endl;
 
+	cout << "\t-f\t\t\tPrint full raw numbers instead of percentage of links";
+
 	//cout << "\t-v\tVerbose output" << endl;
 }
 
@@ -96,8 +98,9 @@ int main(int argc, char **argv) {
 	string literalDomain = "LITERAL";
 	bool minLinks = true;
 	int numMinLinks = 50;
+	bool printPercentage = true;
 
-	while ((c = getopt(argc, argv, "ht:r:i:ve:lm:")) != -1) {
+	while ((c = getopt(argc, argv, "ht:r:i:ve:lm:p")) != -1) {
 		switch (c) {
 		case 'h':
 			help();
@@ -122,6 +125,9 @@ int main(int argc, char **argv) {
 			break;
 		case 'm':
 			istringstream(optarg) >> numMinLinks;
+			break;
+		case 'f':
+			printPercentage = false;
 			break;
 		case 'v':
 			verbose = true;
@@ -221,8 +227,10 @@ int main(int argc, char **argv) {
 			unsigned int countPerDomain = 0;
 			unsigned int subjectDomain = 0;
 			vector<unsigned int> totalCountsPerDomain;
+			unsigned int numTriples=0;
 			while (it->hasNext()) {
 				TripleID triple = *it->next();
+				numTriples++;
 				if ((triple.getSubject() != prevSubject)
 						&& (triple.getSubject() >= domains.getNext_range())) {
 					// some optimization to avoid more checks
@@ -275,6 +283,7 @@ int main(int argc, char **argv) {
 			cout << "-------------------------------------" << endl;
 			cout << endl << endl << "SIMPLE LINKS" << endl;
 			unsigned int currentId = 1;
+			unsigned int numTriplesLiterals=0;
 			for (std::map<string, int>::iterator it = simple_links.begin();
 					it != simple_links.end(); ++it) {
 				std::cout << it->first << " => " << it->second << '\n';
@@ -286,31 +295,33 @@ int main(int argc, char **argv) {
 					string object = parts[1];
 					if (!removeLiteral || object != literalDomain) { //avoid literals
 
-					  if (!minLinks||it->second>=numMinLinks){
+						if (!minLinks || it->second >= numMinLinks) {
 
-					//first save the ID if it's a new subject or object
-						if (exportDomains[subject] == 0) { //subject
-							exportDomains[subject] = currentId;
-							currentId++;
-							differentDomains.push_back(subject);
+							//first save the ID if it's a new subject or object
+							if (exportDomains[subject] == 0) { //subject
+								exportDomains[subject] = currentId;
+								currentId++;
+								differentDomains.push_back(subject);
+							}
+							if (exportDomains[object] == 0) { //object
+								exportDomains[object] = currentId;
+								currentId++;
+								differentDomains.push_back(object);
+							}
+
+							//save the count
+							// exportMatrix[exportDomains[subject]] //gets the row of the subject
+							// now update the number of links for this object
+							exportMatrix[exportDomains[subject]][exportDomains[object]] =
+									it->second; //it->second has the number of links
+
+							exportCount[exportDomains[subject]] =
+									exportCount[exportDomains[subject]]
+											+ it->second; //save the total count
 						}
-						if (exportDomains[object] == 0) { //object
-							exportDomains[object] = currentId;
-							currentId++;
-							differentDomains.push_back(object);
-						}
-
-						//save the count
-						// exportMatrix[exportDomains[subject]] //gets the row of the subject
-						// now update the number of links for this object
-						exportMatrix[exportDomains[subject]][exportDomains[object]] =
-								it->second; //it->second has the number of links
-
-						exportCount[exportDomains[subject]] =
-								exportCount[exportDomains[subject]]
-										+ it->second; //save the total count
-					  }
 					}
+					if (object==literalDomain)
+						numTriplesLiterals+=it->second;
 				}
 			}
 
@@ -329,6 +340,13 @@ int main(int argc, char **argv) {
 			cout << endl << endl << "-------------------------------------"
 					<< endl << endl;
 
+			int numDomains = exportDomains.size();
+			if (removeLiteral) numDomains++;
+			if (minLinks)
+				cout<<"Domains with less than "<<numMinLinks<<" links have been filtered out"<<endl;
+			cout<<"num Domains (including LITERAL ):"<<numTriplesLiterals<<endl;
+			cout<<"numTriples:"<<numTriples<<endl;
+			cout<< ((double)numTriplesLiterals/numTriples)*100<< " % of links go to LITERAL"<<endl;
 			if (exports) {
 
 				ofstream exportFileCSV, exportFileJSON;
@@ -344,9 +362,9 @@ int main(int argc, char **argv) {
 
 				for (int i = 0; i < differentDomains.size(); i++) {
 
-						exportFileCSV << differentDomains[i] << ","
-								<< exportCount[(i + 1)] << ","
-								<< getColor(exportCount[(i + 1)]) << endl;
+					exportFileCSV << differentDomains[i] << ","
+							<< exportCount[(i + 1)] << ","
+							<< getColor(exportCount[(i + 1)]) << endl;
 
 				}
 				exportFileCSV.close();
@@ -362,7 +380,12 @@ int main(int argc, char **argv) {
 						for (int j = 1; j <= differentDomains.size(); j++) {
 							if (j != 1)
 								exportFileJSON << ","; //next list
-							exportFileJSON << exportMatrix[i][j];
+							if (printPercentage){
+								exportFileJSON << ((double)exportMatrix[i][j]/numTriples);
+							}
+							else {
+								exportFileJSON << exportMatrix[i][j];
+							}
 
 						}
 						exportFileJSON << "]";
