@@ -88,7 +88,7 @@ private:
 		}
 	}
 
-	string getDomainInRol(unsigned int id,vector<unsigned int> &vect_range,vector<string> &vect_terms) {
+	pair<string,unsigned int> getDomainInRol(unsigned int id,vector<unsigned int> &vect_range,vector<string> &vect_terms) {
 		string ret="";
 		//search for ID in the vector of ranges
 		vector<unsigned int>::iterator low = std::lower_bound(
@@ -117,7 +117,7 @@ private:
 		}
 
 
-		return ret;
+		return pair<string,unsigned int>(ret,position);
 	}
 
 
@@ -169,11 +169,11 @@ public:
 
 	}
 
-	string getDomain(unsigned int id, hdt::TripleComponentRole rol) {
-		string ret = "";
+	pair<string,unsigned int> getDomain(unsigned int id, hdt::TripleComponentRole rol) {
+		pair<string,unsigned int> ret;
 
 		if (rol==hdt::PREDICATE){
-			return predicate_range[(id-1)]; // in predicates we store one id per position
+			return pair<string,unsigned int>(predicate_range[(id-1)],id-1); // in predicates we store one id per position
 		}
 
 		//first, check the ID to see if we have to look in shared
@@ -216,6 +216,20 @@ public:
 
 	unsigned int getNext_range(){
 		return temp_next_range;
+	}
+
+	vector<string> getTerms(string rol){
+		if (rol=="subject" || rol =="s"){
+			return subject_terms;
+		}
+		else if (rol=="shared" || rol=="h"){
+			return shared_terms;
+		}
+		else if (rol=="object" || rol =="o"){
+			return object_terms;
+		}
+		else
+			return predicate_range;
 	}
 
 };
