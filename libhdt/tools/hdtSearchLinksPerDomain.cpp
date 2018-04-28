@@ -73,7 +73,9 @@ void help() {
 			<< "\t-v\t\t\tVerbose, show results (warning: will print all triples, use for test only)"
 			<< endl;
 	cout
-			<< "\t-e\t<exportFilePrefix>\t\tExport links in <outputFilePrefix-matrix.json> and <outputFilePrefix.csv> including the links in json and the plain info in csv"
+			<< "\t-e\t<exportFilePrefix>\t\tExport links in <outputFilePrefix.json> and <outputFilePrefix.csv> including the links in json and the plain info in csv"
+			<< endl;
+	cout << "\t-l\t\t\tKeep LITERAL count in the export (false by default)"
 			<< endl;
 
 	//cout << "\t-v\tVerbose output" << endl;
@@ -87,11 +89,16 @@ int main(int argc, char **argv) {
 	int testId = 0;
 	bool test = false;
 	bool exports = false;
+	bool removeLiteral = true; //remove the LITERAL output in the export
+	string literalDomain = "LITERAL";
 
-	while ((c = getopt(argc, argv, "ht:r:i:ve:")) != -1) {
+	while ((c = getopt(argc, argv, "ht:r:i:ve:l")) != -1) {
 		switch (c) {
 		case 'h':
 			help();
+			break;
+		case 'l':
+			removeLiteral = false;
 			break;
 		case 't':
 			testString = optarg;
@@ -253,7 +260,7 @@ int main(int argc, char **argv) {
 			totalCountsPerDomain.push_back(countPerDomain);
 
 			map<string, unsigned int> exportDomains; //save the new unique id of domains (needed as domains are repeated in shared and subjects, and shared and objects
-			vector<string>differentDomains; //save the different domains
+			vector<string> differentDomains; //save the different domains
 			map<unsigned int, unsigned int> exportCount; //save the total number of links per domain, i.e. ID--> count
 			map<unsigned int, map<unsigned int, unsigned int>> exportMatrix; //i.e. IDsubject-->[IDObject-->count]
 			// Print stats
@@ -269,26 +276,30 @@ int main(int argc, char **argv) {
 					vector<string> parts = split(it->first, ' ');
 					string subject = parts[0];
 					string object = parts[1];
-					//first save the ID if it's a new subject or object
-					if (exportDomains[subject] == 0) { //subject
-						exportDomains[subject] = currentId;
-						currentId++;
-						differentDomains.push_back(subject);
+					if (!removeLiteral || object != literalDomain) { //avoid for literals
+
+						//first save the ID if it's a new subject or object
+						if (exportDomains[subject] == 0) { //subject
+							exportDomains[subject] = currentId;
+							currentId++;
+							differentDomains.push_back(subject);
+						}
+						if (exportDomains[object] == 0) { //object
+							exportDomains[object] = currentId;
+							currentId++;
+							differentDomains.push_back(object);
+						}
+
+						//save the count
+						// exportMatrix[exportDomains[subject]] //gets the row of the subject
+						// now update the number of links for this object
+						exportMatrix[exportDomains[subject]][exportDomains[object]] =
+								it->second; //it->second has the number of links
+
+						exportCount[exportDomains[subject]] =
+								exportCount[exportDomains[subject]]
+										+ it->second; //save the total count
 					}
-					if (exportDomains[object] == 0) { //object
-						exportDomains[object] = currentId;
-						currentId++;
-						differentDomains.push_back(object);
-					}
-
-					//save the count
-					// exportMatrix[exportDomains[subject]] //gets the row of the subject
-					// now update the number of links for this object
-					exportMatrix[exportDomains[subject]][exportDomains[object]] =
-							it->second; //it->second has the number of links
-
-					exportCount[exportDomains[subject]]=exportCount[exportDomains[subject]]+it->second; //save the total count
-
 				}
 			}
 
@@ -314,74 +325,74 @@ int main(int argc, char **argv) {
 				name.append(exportFileString).append(".csv");
 				exportFileCSV.open(name.c_str());
 				name = "";
-				name.append(exportFileString).append("-matrix.json");
+				name.append(exportFileString).append(".json");
 				exportFileJSON.open(name.c_str());
 
 				//iterate and export first shared, then subjects
 				exportFileCSV << "domain,links,color" << endl;
 
-				for (int i=0;i<differentDomains.size();i++){
-					exportFileCSV<<differentDomains[i]<<","<<exportCount[(i+1)]<<","<<getColor(exportCount[(i+1)])<<endl;
+				for (int i = 0; i < differentDomains.size(); i++) {
+					if (!removeLiteral
+							|| differentDomains[i] != literalDomain) { //avoid exporting the count of the LITERAL
+						exportFileCSV << differentDomains[i] << ","
+								<< exportCount[(i + 1)] << ","
+								<< getColor(exportCount[(i + 1)]) << endl;
+					}
 				}
 				exportFileCSV.close();
 
-				//export the matrix
-				exportFileJSON<<"[";
-
-
 				//now we print the matrix iterating through all IDs, even if there are empty (for consistency with the format)
-				exportFileJSON<<"[";
-				for (int i=1;i<=differentDomains.size();i++){
-					if (i!=1)
-						exportFileJSON<<","; //next list
+				exportFileJSON << "[";
+				for (int i = 1; i <= differentDomains.size(); i++) {
+					if (i != 1)
+						exportFileJSON << ","; //next list
 					//if ((exportMatrix[i]!=NULL) &&
-					if(exportMatrix[i].size()>0){
-						exportFileJSON<<"[";
-						for (int j=1;j<=differentDomains.size();j++){
-							if (j!=1)
-								exportFileJSON<<","; //next list
-							exportFileJSON<<exportMatrix[i][j];
+					if (exportMatrix[i].size() > 0) {
+						exportFileJSON << "[";
+						for (int j = 1; j <= differentDomains.size(); j++) {
+							if (j != 1)
+								exportFileJSON << ","; //next list
+							exportFileJSON << exportMatrix[i][j];
 
 						}
-						exportFileJSON<<"]";
-					}
-					else{
-						exportFileJSON<<"[";
-						for (int j=1;j<differentDomains.size();j++){
-							exportFileJSON<<"0,";
+						exportFileJSON << "]";
+					} else {
+						exportFileJSON << "[";
+						for (int j = 1; j < differentDomains.size(); j++) {
+							exportFileJSON << "0,";
 						}
-						exportFileJSON<<"0]";
+						exportFileJSON << "0]";
 					}
 
 				}
-				exportFileJSON<<"]";
+				exportFileJSON << "]";
 				exportFileJSON.close();
 
-/*
-				for (std::map<unsigned int, map<unsigned int, unsigned int>>::iterator it =
-						exportMatrix.begin(); it != exportMatrix.end(); ++it) {
-					// std::cout << it->first << ": [ ";
-					if (!firstlist)
-						exportFileJSON<<",";
-					exportFileJSON<<"[";
-					bool firstsublist=true;
-					map<unsigned int, unsigned int> row = it->second;
-					for (std::map<unsigned int, unsigned int>::iterator it =
-							row.begin(); it != row.end();
-							++it) {
-						//std::cout << "(id "<<it->first<<")"<< it->second << " , " ;
-						if (!firstsublist)
-							exportFileJSON<<",";
-						exportFileJSON<<it->second;
-						firstsublist=false;
-					}
-					exportFileJSON<<"]";
-					//cout<<"]"<<endl;
-					firstlist=false;
-				}
-				exportFileJSON<<"]";
-				exportFileJSON.close();
-*/
+				/*
+				 for (std::map<unsigned int, map<unsigned int, unsigned int>>::iterator it =
+				 exportMatrix.begin(); it != exportMatrix.end(); ++it) {
+				 // std::cout << it->first << ": [ ";
+				 if (!firstlist)
+				 exportFileJSON<<",";
+				 exportFileJSON<<"[";
+				 bool firstsublist=true;
+				 map<unsigned int, unsigned int> row = it->second;
+				 for (std::map<unsigned int, unsigned int>::iterator it =
+				 row.begin(); it != row.end();
+				 ++it) {
+				 //std::cout << "(id "<<it->first<<")"<< it->second << " , " ;
+				 if (!firstsublist)
+				 exportFileJSON<<",";
+				 exportFileJSON<<it->second;
+				 firstsublist=false;
+				 }
+				 exportFileJSON<<"]";
+				 //cout<<"]"<<endl;
+				 firstlist=false;
+				 }
+				 exportFileJSON<<"]";
+				 exportFileJSON.close();
+				 */
 
 			}
 
