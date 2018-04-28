@@ -77,6 +77,9 @@ void help() {
 			<< endl;
 	cout << "\t-l\t\t\tKeep LITERAL count in the export (false by default)"
 			<< endl;
+	cout
+			<< "\t-m\t<minLinks>\t\t\tExport only those domains with at least minLinks (default: 50)"
+			<< endl;
 
 	//cout << "\t-v\tVerbose output" << endl;
 }
@@ -91,8 +94,10 @@ int main(int argc, char **argv) {
 	bool exports = false;
 	bool removeLiteral = true; //remove the LITERAL output in the export
 	string literalDomain = "LITERAL";
+	bool minLinks = true;
+	int numMinLinks = 50;
 
-	while ((c = getopt(argc, argv, "ht:r:i:ve:l")) != -1) {
+	while ((c = getopt(argc, argv, "ht:r:i:ve:lm:")) != -1) {
 		switch (c) {
 		case 'h':
 			help();
@@ -114,6 +119,9 @@ int main(int argc, char **argv) {
 			break;
 		case 'r':
 			rolString = optarg;
+			break;
+		case 'm':
+			istringstream(optarg) >> numMinLinks;
 			break;
 		case 'v':
 			verbose = true;
@@ -276,9 +284,11 @@ int main(int argc, char **argv) {
 					vector<string> parts = split(it->first, ' ');
 					string subject = parts[0];
 					string object = parts[1];
-					if (!removeLiteral || object != literalDomain) { //avoid for literals
+					if (!removeLiteral || object != literalDomain) { //avoid literals
 
-						//first save the ID if it's a new subject or object
+					  if (!minLinks||it->second>=numMinLinks){
+
+					//first save the ID if it's a new subject or object
 						if (exportDomains[subject] == 0) { //subject
 							exportDomains[subject] = currentId;
 							currentId++;
@@ -299,6 +309,7 @@ int main(int argc, char **argv) {
 						exportCount[exportDomains[subject]] =
 								exportCount[exportDomains[subject]]
 										+ it->second; //save the total count
+					  }
 					}
 				}
 			}
@@ -332,12 +343,11 @@ int main(int argc, char **argv) {
 				exportFileCSV << "domain,links,color" << endl;
 
 				for (int i = 0; i < differentDomains.size(); i++) {
-					if (!removeLiteral
-							|| differentDomains[i] != literalDomain) { //avoid exporting the count of the LITERAL
+
 						exportFileCSV << differentDomains[i] << ","
 								<< exportCount[(i + 1)] << ","
 								<< getColor(exportCount[(i + 1)]) << endl;
-					}
+
 				}
 				exportFileCSV.close();
 
