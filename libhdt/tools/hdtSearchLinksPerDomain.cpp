@@ -38,10 +38,10 @@ vector<string> split(const string &s, char delim) {
 	return tokens;
 }
 
-vector<string> colors = { "#f032e6", "#d2f53c", "#fabebe", "#008080", "#e6194b",
+vector<string> colors = { "#008080", "#e6194b",
 		"#3cb44b", "#ffe119", "#0082c8", "#f58231", "#911eb4", "#46f0f0",
 		"#e6beff", "#aa6e28", "#fffac8", "#800000", "#aaffc3", "#808000",
-		"#ffd8b1", "#000080", "#808080", "#FFFFFF", "#000000" };
+		"#ffd8b1", "#000080", "#808080", "#FFFFFF", "#000000","#f032e6", "#d2f53c", "#fabebe" };
 // different colors from https://sashat.me/2017/01/11/list-of-20-simple-distinct-colors/
 int prevColor = 0;
 string getColor(unsigned int links) {
@@ -381,7 +381,12 @@ int main(int argc, char **argv) {
 							if (j != 1)
 								exportFileJSON << ","; //next list
 							if (printPercentage){
-								exportFileJSON << ((double)exportMatrix[i][j]/numTriples);
+								if (removeLiteral){
+								exportFileJSON << ((double)exportMatrix[i][j]/(numTriples-numTriplesLiterals)); //we remove literals from the percentage
+								}
+								else{
+									exportFileJSON << ((double)exportMatrix[i][j]/(numTriples));
+								}
 							}
 							else {
 								exportFileJSON << exportMatrix[i][j];
