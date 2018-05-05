@@ -58,13 +58,15 @@ void help() {
 	cout << "\t-h\t\t\tThis help" << endl;
 	cout << "\t-q\t<query>\t\tLaunch query and exit." << endl;
 	cout << "\t-o\t<output>\tSave query output to file." << endl;
-    cout << "\t-f\t<offset>\tLimit the result list starting after the offset." << endl;
+        cout << "\t-f\t<offset>\tLimit the result list starting after the offset." << endl;
 	cout << "\t-m\t\t\tDo not show results, just measure query time." << endl;
 	cout << "\t-V\t\t\tPrints the HDT version number." << endl;
+	cout << "\t-n\t\t\tOutput in n-triples" << endl;
+						   cout << "\t-r s|p|o \t\t\tOutput only a specific role of the results (only subject, precicate, object)" << endl;
 	//cout << "\t-v\tVerbose output" << endl;
 }
 
-void iterate(HDT *hdt, char *query, ostream &out, bool measure, uint32_t offset) {
+  void iterate(HDT *hdt, char *query, ostream &out, bool measure, bool ntriples, uint32_t offset) {
 	TripleString tripleString;
 	tripleString.read(query);
 
@@ -115,7 +117,26 @@ void iterate(HDT *hdt, char *query, ostream &out, bool measure, uint32_t offset)
 		while(it->hasNext() && interruptSignal==0) {
 			TripleString *ts = it->next();
 			if(!measure)
-				out << *ts << endl;
+			  {
+			    if(ntriples) {
+			      if (ts->getSubject()[0] == '_' || ts->getSubject()[0] == '"') {
+				out << ts->getSubject() ;
+			      } else {
+				  out << "<" << ts->getSubject() << ">";
+			      }
+			      out << " <" << ts->getPredicate() <<  "> ";
+			      if (ts->getObject()[0] == '_' || ts->getObject()[0] == '"') {
+				out << ts->getObject() ;
+			      } else {
+				out << "<" << ts->getObject() << ">";
+			      }
+			      out << " .";
+			    }
+			    else {
+			      out << *ts;
+			    }
+			    out << endl;
+			  }
 			numTriples++;
 		}
 		cerr << numTriples << " results in " << st << endl;
@@ -133,9 +154,10 @@ int main(int argc, char **argv) {
 	string query, inputFile, outputFile;
     stringstream sstream;
     uint32_t offset = 0;
-	bool measure = false;
-
-	while( (c = getopt(argc,argv,"hq:o:f:mV"))!=-1) {
+    bool measure = false;
+    bool ntriples = false;
+    
+	while( (c = getopt(argc,argv,"hnq:o:f:mV"))!=-1) {
 		switch(c) {
 		case 'h':
 			help();
@@ -144,14 +166,17 @@ int main(int argc, char **argv) {
 			query = optarg;
 			break;
 		case 'o':
-			outputFile = optarg;
+		        outputFile = optarg;
 			break;
-        case 'f':
-            sstream << optarg;
-            if(!(sstream >> offset)) offset=0;
-            break;
+		case 'f':
+		        sstream << optarg;
+			if(!(sstream >> offset)) offset=0;
+			break;
 		case 'm':
 			measure = true;
+			break;
+		case 'n':
+			ntriples = true;
 			break;
 		case 'V':
 			cout << HDTVersion::get_version_string(".") << endl;
@@ -188,7 +213,7 @@ int main(int argc, char **argv) {
 
 		if(query!="") {
 			// Supplied query, search and exit.
-			iterate(hdt, (char*)query.c_str(), *out, measure, offset);
+		        iterate(hdt, (char*)query.c_str(), *out, measure, ntriples, offset);
 		} else {
 			// No supplied query, show terminal.
 			char line[1024*10];
@@ -207,7 +232,7 @@ int main(int argc, char **argv) {
 					continue;
 				}
 
-				iterate(hdt, line, *out, measure, offset);
+				iterate(hdt, line, *out, measure, ntriples, offset);
 
 				cerr << ">> ";
 			}
