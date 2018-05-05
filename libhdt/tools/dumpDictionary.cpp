@@ -144,6 +144,15 @@ int main(int argc, char **argv) {
 			break;
 		case 'r':
 			rolUser = optarg;
+			if( rolUser != "s"
+			    &&  rolUser != "p"
+			    && rolUser != "o"
+			    && rolUser != "h"
+			    && rolUser != "a" ) {
+			  cerr << "ERROR: Unknown role" << endl;
+			  help();
+			  return 1;
+			}
 			break;
 		default:
 			cout << "ERROR: Unknown option:" << c << endl;
@@ -173,18 +182,31 @@ int main(int argc, char **argv) {
 
 		if(filter)
 		  { TripleComponentRole role;
-		    if (rolUser[0] =='s')
-		      role = SUBJECT;
-		    else if (rolUser[0] == 'p')
-		      role = PREDICATE;
-		    else if (rolUser[0] =='o')
-		      role = OBJECT;
-		    else {
-		      cout << "ERROR: -f only allowed in combination with -r and roles 's', 'p' or 'o' " << endl;
-		      help();
-		      return 1;
+		    if ((rolUser =="s") || (rolUser =="p") || (rolUser =="o")) {
+		      if(rolUser == "s")
+			role = SUBJECT;
+		      else if (rolUser == "p")
+			role = PREDICATE;
+		      else
+			role = OBJECT;
+		      itSol = dict->getSuggestions(filter,role);
 		    }
-		    itSol = dict->getSuggestions(filter,role);	  
+		    else if( rolUser == "h") {
+		      // TODO: I would need something like an IntersectIteratorUCharString to make that work, so, for the
+		      // moment, I just forbid role "h" 
+		      // itSol = new IntersectIteratorUCharString(dict->getSuggestions(filter,SUBJECT),
+		      //				   dict->getSuggestions(filter,OBJECT));
+		      cout << "ERROR: role 'h' not allowed in combination with -f" << endl;
+		      help();
+		      return 1;		      
+		    } else if( rolUser == "a") {
+		      itSol = new MergeIteratorUCharString(
+							   new MergeIteratorUCharString(dict->getSuggestions(filter,SUBJECT),
+											dict->getSuggestions(filter,PREDICATE)),
+							   dict->getSuggestions(filter,OBJECT));
+		    } else {
+		      assert(0);
+		    }
 		  }
 		else
 		  {
@@ -254,7 +276,7 @@ int main(int argc, char **argv) {
 				print_CSV_header(exportFile);
 				parse_terms_iterator(exportFile, startID, itSol);
 				exportFile.close();
-			} else { // s, o or shared
+			} else { // s, o, all or shared
 
 				// first check the shared
 				name.append(outFile).append("-").append("h").append(".csv");
@@ -301,6 +323,8 @@ int main(int argc, char **argv) {
 					print_CSV_header(exportFile);
 					parse_terms_iterator(exportFile, startID, itSol2);
 					exportFile.close();
+				} else {
+				  assert(0);
 				}
 
 			}
