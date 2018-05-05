@@ -62,7 +62,7 @@ void help() {
 	cout << "\t-m\t\t\tDo not show results, just measure query time." << endl;
 	cout << "\t-V\t\t\tPrints the HDT version number." << endl;
 	cout << "\t-n\t\t\tOutput in n-triples" << endl;
-						   cout << "\t-r s|p|o \t\t\tOutput only a specific role of the results (only subject, precicate, object)" << endl;
+	cout << "\t-r s|p|o \t\tOutput only a specific role of the results (only subject, precicate, object)" << endl;
 	//cout << "\t-v\tVerbose output" << endl;
 }
 
