@@ -66,7 +66,7 @@ void help() {
 	//cout << "\t-v\tVerbose output" << endl;
 }
 
-  void iterate(HDT *hdt, char *query, ostream &out, bool measure, bool ntriples, uint32_t offset) {
+  void iterate(HDT *hdt, char *query, ostream &out, bool measure, bool ntriples, char *role, uint32_t offset) {
 	TripleString tripleString;
 	tripleString.read(query);
 
@@ -118,7 +118,17 @@ void help() {
 			TripleString *ts = it->next();
 			if(!measure)
 			  {
-			    if(ntriples) {
+			    if(role) {
+			      if(role[0] == 's')
+				out << ts->getSubject();
+			      else if(role[0] == 'p')
+				out << ts->getPredicate();
+			      else if(role[0] == '0')
+			        out << ts->getObject();
+			      else
+				assert(0);
+			    }
+			    else if(ntriples) {
 			      if (ts->getSubject()[0] == '_' || ts->getSubject()[0] == '"') {
 				out << ts->getSubject() ;
 			      } else {
@@ -156,8 +166,9 @@ int main(int argc, char **argv) {
     uint32_t offset = 0;
     bool measure = false;
     bool ntriples = false;
+    char *role = 0;
     
-	while( (c = getopt(argc,argv,"hnq:o:f:mV"))!=-1) {
+	while( (c = getopt(argc,argv,"hnq:o:f:r:mV"))!=-1) {
 		switch(c) {
 		case 'h':
 			help();
@@ -177,6 +188,14 @@ int main(int argc, char **argv) {
 			break;
 		case 'n':
 			ntriples = true;
+			break;
+		case 'r':
+		        role = optarg;
+			if( role[0] != 's' &&  role[0] != 'p' &&  role[0] != 'o' ) {
+			  cerr << "ERROR: Unknown role" << endl;
+			  help();
+			  return 1;
+			}
 			break;
 		case 'V':
 			cout << HDTVersion::get_version_string(".") << endl;
@@ -213,7 +232,7 @@ int main(int argc, char **argv) {
 
 		if(query!="") {
 			// Supplied query, search and exit.
-		        iterate(hdt, (char*)query.c_str(), *out, measure, ntriples, offset);
+		       iterate(hdt, (char*)query.c_str(), *out, measure, ntriples, role, offset);
 		} else {
 			// No supplied query, show terminal.
 			char line[1024*10];
@@ -232,7 +251,7 @@ int main(int argc, char **argv) {
 					continue;
 				}
 
-				iterate(hdt, line, *out, measure, ntriples, offset);
+				iterate(hdt, line, *out, measure, ntriples, role, offset);
 
 				cerr << ">> ";
 			}
