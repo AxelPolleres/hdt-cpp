@@ -124,7 +124,7 @@ void help() {
 				out << ts->getSubject();
 			      else if(role[0] == 'p')
 				out << ts->getPredicate();
-			      else if(role[0] == '0')
+			      else if(role[0] == 'o')
 			        out << ts->getObject();
 			      else
 				assert(0);
