@@ -38,6 +38,7 @@
 #include <getopt.h>
 #include <string.h>
 #include <string>
+#include <cassert>
 #include <cstdint>
 #include <iostream>
 #include <fstream>
