@@ -43,6 +43,7 @@
 #include <iostream>
 #include <fstream>
 #include "../src/util/StopWatch.hpp"
+#include <boost/algorithm/string.hpp>
 
 using namespace hdt;
 using namespace std;
@@ -130,14 +131,28 @@ void help() {
 				assert(0);
 			    }
 			    else if(ntriples) {
-			      if (ts->getSubject()[0] == '_' || ts->getSubject()[0] == '"') {
+			      if (ts->getSubject()[0] == '_') {
+				// TODO: if for some reason we would want to extend HDt to allow generalized RDF (literals in subjects)
+				// we'd need to fix this just as on the object branch!
 				out << ts->getSubject() ;
 			      } else {
 				  out << "<" << ts->getSubject() << ">";
 			      }
+
 			      out << " <" << ts->getPredicate() <<  "> ";
-			      if (ts->getObject()[0] == '_' || ts->getObject()[0] == '"') {
+
+			      if (ts->getObject()[0] == '_') {
 				out << ts->getObject() ;
+			      } else if(ts->getObject()[0] == '"') {
+				// for literals, escape internal quotesi and newlines!
+				std::string s = ts->getObject();
+				// TODO: This seems a bit ugly, particularly the use of the replace_first and replace_last,
+				//       also the reliance on boost is not great, but it works!
+				boost::replace_all(s, "\n", "\\n");
+				boost::replace_all(s, "\"", "\\\"");
+				boost::replace_first(s, "\\\"", "\"");
+				boost::replace_last(s, "\\\"", "\"");
+				out << s ;
 			      } else {
 				out << "<" << ts->getObject() << ">";
 			      }
