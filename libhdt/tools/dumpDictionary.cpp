@@ -39,6 +39,7 @@ bool pld = false;
 bool pref = false;
 bool qnames = false;
 bool exportOutput = false;
+char* filter = 0;
 
 void help() {
 	cout << "$ dumpDictionary <HDT file>" << endl;
@@ -50,10 +51,11 @@ void help() {
 	cout
 			<< "\t-q\t\t\t\tPrint all qnames per prefixes (that is, same qname per different prefix will appear duplicated!)"
 			<< endl;
-	cout << "\t-r\t<rol>\t\t\tRol (s|p|o|h|a), where a=all, h=shared." << endl;
+	cout << "\t-r <rol>\t\t\tRol (s|p|o|h|a), where a=all, h=shared." << endl;
 	cout << "\t-c\t\t\t\talso print counts" << endl;
+	cout << "\t-f <PREFIX>\t\t\tfilter the dictionary by prefix PREFIX" << endl;
 	cout
-			<< "\t-e <outputFilePrefix>\t\t\t\texport ranges to <outputFilePrefix-{rol}.csv> "
+			<< "\t-e <outputFilePrefix>\t\texport ranges to <outputFilePrefix-{rol}.csv> "
 			<< endl;
 	// TODO: add a verbose option:
 	//cout << "\t-v\tVerbose output" << endl;
@@ -116,7 +118,7 @@ int main(int argc, char **argv) {
 
 	string outFile = "output.csv";
 
-	while ((c = getopt(argc, argv, "hcdpqr:e:")) != -1) {
+	while ((c = getopt(argc, argv, "hcdpqf:r:e:")) != -1) {
 		switch (c) {
 		case 'h':
 			help();
@@ -137,8 +139,20 @@ int main(int argc, char **argv) {
 			outFile = optarg;
 			exportOutput = true;
 			break;
+		case 'f':
+			filter = optarg;
+			break;
 		case 'r':
 			rolUser = optarg;
+			if( rolUser != "s"
+			    &&  rolUser != "p"
+			    && rolUser != "o"
+			    && rolUser != "h"
+			    && rolUser != "a" ) {
+			  cerr << "ERROR: Unknown role" << endl;
+			  help();
+			  return 1;
+			}
 			break;
 		default:
 			cout << "ERROR: Unknown option:" << c << endl;
@@ -165,50 +179,82 @@ int main(int argc, char **argv) {
 		IteratorUCharString * itSol3=NULL;
 		IteratorUCharString * itSol4=NULL;
 
-		switch (rolUser[0]) {
-		case 'o':
-			if (!exportOutput) {
-				itSol = new MergeIteratorUCharString(dict->getShared(),
-						dict->getObjects());
-			} else {
-				itSol = dict->getShared();
-				itSol2 = dict->getObjects();
-			}
-			break;
-		case 's':
-			if (!exportOutput) {
-				itSol = new MergeIteratorUCharString(dict->getShared(),
-						dict->getSubjects());
-			} else {
-				itSol = dict->getShared();
-				itSol2 = dict->getSubjects();
-			}
-			break;
-		case 'p':
-			itSol = dict->getPredicates();
-			break;
-		case 'h':
+
+		if(filter)
+		  { TripleComponentRole role;
+		    if ((rolUser =="s") || (rolUser =="p") || (rolUser =="o")) {
+		      if(rolUser == "s")
+			role = SUBJECT;
+		      else if (rolUser == "p")
+			role = PREDICATE;
+		      else
+			role = OBJECT;
+		      itSol = dict->getSuggestions(filter,role);
+		    }
+		    else if( rolUser == "h") {
+		      // TODO: I would need something like an IntersectIteratorUCharString to make that work, so, for the
+		      // moment, I just forbid role "h" 
+		      // itSol = new IntersectIteratorUCharString(dict->getSuggestions(filter,SUBJECT),
+		      //				   dict->getSuggestions(filter,OBJECT));
+		      cout << "ERROR: role 'h' not allowed in combination with -f" << endl;
+		      help();
+		      return 1;		      
+		    } else if( rolUser == "a") {
+		      itSol = new MergeIteratorUCharString(
+							   new MergeIteratorUCharString(dict->getSuggestions(filter,SUBJECT),
+											dict->getSuggestions(filter,PREDICATE)),
+							   dict->getSuggestions(filter,OBJECT));
+		    } else {
+		      assert(0);
+		    }
+		  }
+		else
+		  {
+		    switch (rolUser[0]) {
+		    case 'o':
+		      if (!exportOutput) {
+			itSol = new MergeIteratorUCharString(dict->getShared(),
+							     dict->getObjects());
+		      } else {
 			itSol = dict->getShared();
-			break;
-		case 'a':
-			if (!exportOutput) {
-				itSol = new MergeIteratorUCharString(
-						new MergeIteratorUCharString(
-								new MergeIteratorUCharString(dict->getShared(),
-										dict->getObjects()),
-								dict->getSubjects()), dict->getPredicates());
-			} else {
-				itSol = dict->getShared();
-				itSol2 = dict->getSubjects();
-				itSol3 = dict->getObjects();
-				itSol4 = dict->getPredicates();
-			}
-			break;
-		default:
-			cout << "ERROR: Unknown option" << endl;
-			help();
-			return 1;
-		}
+			itSol2 = dict->getObjects();
+		      }
+		      break;
+		    case 's':
+		      if (!exportOutput) {
+			itSol = new MergeIteratorUCharString(dict->getShared(),
+							     dict->getSubjects());
+		      } else {
+			itSol = dict->getShared();
+			itSol2 = dict->getSubjects();
+		      }
+		      break;
+		    case 'p':
+		      itSol = dict->getPredicates();
+		      break;
+		    case 'h':
+		      itSol = dict->getShared();
+		      break;
+		    case 'a':
+		      if (!exportOutput) {
+			itSol = new MergeIteratorUCharString(
+							     new MergeIteratorUCharString(
+											  new MergeIteratorUCharString(dict->getShared(),
+														       dict->getObjects()),
+											  dict->getSubjects()), dict->getPredicates());
+		      } else {
+			itSol = dict->getShared();
+			itSol2 = dict->getSubjects();
+			itSol3 = dict->getObjects();
+			itSol4 = dict->getPredicates();
+		      }
+		      break;
+		    default:
+		      cout << "ERROR: Unknown option" << endl;
+		      help();
+		      return 1;
+		    }
+		  }
 
 		if ((pld + qnames + pref) > 1) {
 			cout << "ERROR: you cannot choose options -p -q or -d concurrently "
@@ -230,7 +276,7 @@ int main(int argc, char **argv) {
 				print_CSV_header(exportFile);
 				parse_terms_iterator(exportFile, startID, itSol);
 				exportFile.close();
-			} else { // s, o or shared
+			} else { // s, o, all or shared
 
 				// first check the shared
 				name.append(outFile).append("-").append("h").append(".csv");
@@ -277,6 +323,8 @@ int main(int argc, char **argv) {
 					print_CSV_header(exportFile);
 					parse_terms_iterator(exportFile, startID, itSol2);
 					exportFile.close();
+				} else {
+				  assert(0);
 				}
 
 			}
