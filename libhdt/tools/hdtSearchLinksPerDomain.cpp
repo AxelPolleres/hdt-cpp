@@ -75,7 +75,7 @@ void help() {
 	cout
 			<< "\t-e\t<exportFilePrefix>\t\tExport links in <outputFilePrefix.json> and <outputFilePrefix.csv> including the links in json and the plain info in csv"
 			<< endl;
-	cout << "\t-l\t\t\tKeep LITERAL count in the export (false by default)"
+	cout << "\t-l\t\t\tKeep LITERAL count in the export (true by default)"
 			<< endl;
 	cout
 			<< "\t-m\t<minLinks>\t\t\tExport only those domains with at least minLinks (default: 50)"
@@ -94,7 +94,7 @@ int main(int argc, char **argv) {
 	int testId = 0;
 	bool test = false;
 	bool exports = false;
-	bool removeLiteral = true; //remove the LITERAL output in the export
+	bool removeLiteral = false; //remove the LITERAL output in the export
 	string literalDomain = "LITERAL";
 	bool minLinks = true;
 	int numMinLinks = 50;
@@ -382,8 +382,8 @@ int main(int argc, char **argv) {
 					}
 				}
 				exportFileCSV.close();
-				exportMaxFileCSV<<"Percentage over triples; Percentage removing Bnode subjects; Domain"<<endl;
-				exportMaxFileCSV<<((double)maxCount/(numTriples))<<((double)(maxCount-numTriplesWithBnodesAsSubject)/(numTriples))<<differentDomains[maxDomain]<<endl;
+				exportMaxFileCSV<<"Percentage over triples, Percentage removing Bnode subjects, Domain"<<endl;
+				exportMaxFileCSV<<((double)maxCount/(numTriples))<<","<<((double)(maxCount-numTriplesWithBnodesAsSubject)/(numTriples))<<","<<differentDomains[maxDomain]<<endl;
 
 				exportMaxFileCSV.close();
 
