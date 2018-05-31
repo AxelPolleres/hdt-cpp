@@ -75,7 +75,7 @@ void help() {
 	cout
 			<< "\t-e\t<exportFilePrefix>\t\tExport links in <outputFilePrefix.json> and <outputFilePrefix.csv> including the links in json and the plain info in csv"
 			<< endl;
-	cout << "\t-l\t\t\tKeep LITERAL count in the export (true by default)"
+	cout << "\t-l\t\t\tkeep LITERAL count in the export (false by default)"
 			<< endl;
 	cout
 			<< "\t-m\t<minLinks>\t\t\tExport only those domains with at least minLinks (default: 50)"
@@ -106,7 +106,7 @@ int main(int argc, char **argv) {
 			help();
 			break;
 		case 'l':
-			removeLiteral = false;
+			removeLiteral = true;
 			break;
 		case 't':
 			testString = optarg;
@@ -264,8 +264,8 @@ int main(int argc, char **argv) {
 								+ domains.getDomain(triple.getPredicate(),
 										PREDICATE).first + " " + target_domain; // we assume the space is not found in the domains
 
-				simple_links[simple_link] = simple_links[simple_link] + 1;
-				labeled_links[labeled_link] = labeled_links[labeled_link] + 1;
+				simple_links[simple_link] = simple_links[simple_link] + 1; //update the count for this combination of origin and target
+				labeled_links[labeled_link] = labeled_links[labeled_link] + 1; //update the count for this combination of origin and target
 				domainLabeled_links[domainLabeled_link] =
 						domainLabeled_links[domainLabeled_link] + 1;
 
@@ -365,6 +365,7 @@ int main(int argc, char **argv) {
 				exportFileCSV << "domain,links,color" << endl;
 
 				unsigned int maxCount=0;
+				unsigned int totalCount=0;
 				unsigned int maxDomain=0;
 				unsigned int numTriplesWithBnodesAsSubject=0;
 				for (int i = 0; i < differentDomains.size(); i++) {
@@ -380,10 +381,11 @@ int main(int argc, char **argv) {
 					if (differentDomains[i]=="BNODE"){
 						numTriplesWithBnodesAsSubject = exportCount[(i + 1)];
 					}
+					totalCount+=exportCount[(i + 1)];
 				}
 				exportFileCSV.close();
-				exportMaxFileCSV<<"Percentage over triples, Percentage removing Bnode subjects, Domain"<<endl;
-				exportMaxFileCSV<<((double)maxCount/(numTriples))<<","<<((double)(maxCount-numTriplesWithBnodesAsSubject)/(numTriples))<<","<<differentDomains[maxDomain]<<endl;
+				exportMaxFileCSV<<"Percentage over links with more than "<<numMinLinks<<" domains, Percentage over all triples, Percentage removing Bnode subjects, Domain"<<endl;
+				exportMaxFileCSV<<((double)maxCount/(totalCount))<<","<<((double)maxCount/(numTriples))<<","<<((double)(maxCount-numTriplesWithBnodesAsSubject)/(numTriples))<<","<<differentDomains[maxDomain]<<endl;
 
 				exportMaxFileCSV.close();
 
