@@ -24,7 +24,7 @@ using namespace std;
 string colorFewLinks = "#949494";
 int thresholdFewLinks = 50;
 bool import = false;
-hdt::HDT *hdt_file;
+hdt::HDT *hdt_file1;
 char delim = ' ';
 bool verbose = false;
 
@@ -148,13 +148,13 @@ int main(int argc, char **argv) {
 	inputFile = argv[optind];
 
 	try {
-		hdt_file = HDTManager::mapIndexedHDT(inputFile.c_str());
+		hdt_file1 = HDTManager::mapIndexedHDT(inputFile.c_str());
 
 		istringstream(testString) >> testId;
 
 		// Import the range of domains from the input file
 		Domains domains(importFileString,
-				hdt_file->getDictionary()->getNshared());
+				hdt_file1->getDictionary()->getNshared());
 
 		if (verbose) {
 			cout << endl << "(verbose)- Let's check the content of our ranges:"
@@ -163,7 +163,7 @@ int main(int argc, char **argv) {
 			cout << endl << endl;
 
 			cout << "(verbose)- Let's print current triples!" << endl;
-			IteratorTripleString* itS = hdt_file->search("", "", "");
+			IteratorTripleString* itS = hdt_file1->search("", "", "");
 			while (itS->hasNext()) {
 				cout << *(itS->next()) << endl;
 			}
@@ -186,7 +186,7 @@ int main(int argc, char **argv) {
 			string origin_domain = origin.first;
 
 			IteratorTripleID* it =
-					((BitmapTriples*) (hdt_file->getTriples()))->searchRange(
+					((BitmapTriples*) (hdt_file1->getTriples()))->searchRange(
 							testId, testId, origin_rol);
 
 			unsigned int count = 1;
@@ -218,7 +218,7 @@ int main(int argc, char **argv) {
 			map<string, int> domainLabeled_links; //count the different domain-labeled links (domain-subject domain-predicate domain-object);
 			//todo maybe compute also the type of the subject/object?
 
-			IteratorTripleID* it = hdt_file->getTriples()->searchAll();
+			IteratorTripleID* it = hdt_file1->getTriples()->searchAll();
 
 			pair<string, unsigned int> origin;
 			pair<string, unsigned int> target;
@@ -256,7 +256,7 @@ int main(int argc, char **argv) {
 				//store in the string maps
 				string simple_link = origin_domain + " " + target_domain; // we assume the space is not found in the domains
 				string labeled_link = origin_domain + " "
-						+ hdt_file->getDictionary()->idToString(
+						+ hdt_file1->getDictionary()->idToString(
 								triple.getPredicate(), PREDICATE) + " "
 						+ target_domain; // we assume the space is not found in the domains
 				string domainLabeled_link =
@@ -349,7 +349,7 @@ int main(int argc, char **argv) {
 			cout<< ((double)numTriplesLiterals/numTriples)*100<< " % of links go to LITERAL"<<endl;
 			if (exports) {
 
-				ofstream exportFileCSV, exportFileJSON;
+				ofstream exportFileCSV, exportFileJSON, exportMaxFileCSV;
 				string name = "";
 				name.append(exportFileString).append(".csv");
 				exportFileCSV.open(name.c_str());
@@ -357,17 +357,35 @@ int main(int argc, char **argv) {
 				name.append(exportFileString).append(".json");
 				exportFileJSON.open(name.c_str());
 
+				name = "max-";
+				name.append(exportFileString).append(".csv");
+				exportMaxFileCSV.open(name.c_str());
+
 				//iterate and export first shared, then subjects
 				exportFileCSV << "domain,links,color" << endl;
 
+				unsigned int maxCount=0;
+				unsigned int maxDomain=0;
+				unsigned int numTriplesWithBnodesAsSubject=0;
 				for (int i = 0; i < differentDomains.size(); i++) {
 
 					exportFileCSV << differentDomains[i] << ","
 							<< exportCount[(i + 1)] << ","
 							<< getColor(exportCount[(i + 1)]) << endl;
 
+					if (exportCount[(i + 1)]>maxCount){
+						maxCount = exportCount[(i + 1)];
+						maxDomain = i;
+					}
+					if (differentDomains[i]=="BNODE"){
+						numTriplesWithBnodesAsSubject = exportCount[(i + 1)];
+					}
 				}
 				exportFileCSV.close();
+				exportMaxFileCSV<<"Percentage over triples; Percentage removing Bnode subjects; Domain"<<endl;
+				exportMaxFileCSV<<((double)maxCount/(numTriples))<<((double)(maxCount-numTriplesWithBnodesAsSubject)/(numTriples))<<differentDomains[maxDomain]<<endl;
+
+				exportMaxFileCSV.close();
 
 				//now we print the matrix iterating through all IDs, even if there are empty (for consistency with the format)
 				exportFileJSON << "[";
@@ -436,7 +454,7 @@ int main(int argc, char **argv) {
 
 			delete it;
 		}
-		delete hdt_file;
+		delete hdt_file1;
 	} catch (std::exception& e) {
 		cerr << "ERROR!: " << e.what() << endl;
 	}
