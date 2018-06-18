@@ -24,9 +24,13 @@ private:
 	vector<string> subject_terms; //different domains/PLDs/prefixes for each range in subject_range
 	vector<string> object_terms; //different domains/PLDs/prefixes for each range in object_range
 
+	map<string,unsigned int> subjectsOccurrences; //additional index to count the number of different terms for each domains/PLDs/prefixes (aggregating subjects and shared)
+
+
 	unsigned int numShared; // number of shared subject-object elements
 
 	char delim = ' ';
+
 
 	vector<string> split(const string &s, char delim) {
 		stringstream ss(s);
@@ -70,9 +74,15 @@ private:
 						shared_terms.push_back(parts[0]);
 						shared_range.push_back(start); //just mark the beginning, we assumme correlative ranges
 
+						// build additional index with the occurrences
+					    subjectsOccurrences[parts[0]]=subjectsOccurrences[parts[0]]+(end-start+1);
+
 					} else if (rol == "s") {
 						subject_terms.push_back(parts[0]);
 						subject_range.push_back(start); //just mark the beginning, we assumme correlative ranges
+
+						// build additional index with the occurrences
+						subjectsOccurrences[parts[0]]=subjectsOccurrences[parts[0]]+(end-start+1);
 
 					} else if (rol == "o") {
 						object_terms.push_back(parts[0]);
@@ -226,6 +236,23 @@ public:
 			return shared_terms;
 		}
 		else if (rol=="object" || rol =="o"){
+			return object_terms;
+		}
+		else
+			return predicate_range;
+	}
+
+	unsigned int getSubjectOccurrences(string domain){
+		return subjectsOccurrences[domain];
+	}
+	vector<string> getDomains(hdt::DictionarySection rol) {
+		if (rol == hdt::NOT_SHARED_SUBJECT) {
+			return subject_terms;
+		}
+		else if (rol == hdt::SHARED_SUBJECT || rol == hdt::SHARED_OBJECT) {
+			return shared_terms;
+		}
+		else if (rol == hdt::NOT_SHARED_OBJECT) {
 			return object_terms;
 		}
 		else

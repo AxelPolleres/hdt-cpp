@@ -1,4 +1,4 @@
-bin_PROGRAMS = hdt2rdf hdtInfo hdtSearch modifyHeader rdf2hdt replaceHeader searchHeader dumpDictionary hdtSearchRangeIDs hdtSearchLinksPerDomain
+bin_PROGRAMS = hdt2rdf hdtInfo hdtSearch modifyHeader rdf2hdt replaceHeader searchHeader dumpDictionary hdtSearchRangeIDs hdtSearchLinksPerDomain hdtDiff computeLinkCloud
 
 AM_DEFAULT_SOURCE_EXT = .cpp
 
