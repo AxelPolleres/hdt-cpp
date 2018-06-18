@@ -243,6 +243,7 @@ int main(int argc, char **argv) {
 		if (numDoms%1000==0){
 			cout<< "   "<<numDoms<<" domains"<<endl;
 		}
+		numDoms++;
 		string currentDomain = *doms;
 		unsigned int maxOccurrence = 0;
 		vector<string> maxDatasets;
