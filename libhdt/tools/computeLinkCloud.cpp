@@ -238,7 +238,11 @@ int main(int argc, char **argv) {
 	cout<<endl<<endl<<"Iterating the set of different domains and compute the authoritative dataset(s)..."<<endl;
 	// iterate the set of different domains and compute the authoritative dataset(s)
 	std::set<string>::iterator doms;
+	long numDoms=1;
 	for (doms = domains.begin(); doms != domains.end(); ++doms) {
+		if (numDoms%1000==0){
+			cout<< "   "<<numDoms<<" domains"<<endl;
+		}
 		string currentDomain = *doms;
 		unsigned int maxOccurrence = 0;
 		vector<string> maxDatasets;
