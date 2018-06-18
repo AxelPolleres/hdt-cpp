@@ -180,9 +180,11 @@ int main(int argc, char **argv) {
 									"cloud.csv") == 0)) { //check if it starts with stats and ends in cloud.csv
 						// WE STORE the links of the dataset
 						// get the dataset name
+
 						string nameFile(entry->d_name);
 						subparts = split(nameFile, '_');
 						string datasetName = subparts[1];
+						cout<< "Computing stats for "<<datasetName<<endl;
 
 						ifstream inputFile(
 								result_analysis_Folder + "/" + entry->d_name);
@@ -215,6 +217,7 @@ int main(int argc, char **argv) {
 
 	map<string, Domains>::iterator it;
 
+	cout<<endl<<endl<<"Creating a set with all different domains..."<<endl;
 	//first, create a set with all different domains
 	set<string> domains;
 	for (it = datasets.begin(); it != datasets.end(); it++) {
@@ -232,6 +235,7 @@ int main(int argc, char **argv) {
 				std::inserter(domains, domains.end()));
 	}
 	//cout << "domains size:" << domains.size() << endl;
+	cout<<endl<<endl<<"Iterating the set of different domains and compute the authoritative dataset(s)..."<<endl;
 	// iterate the set of different domains and compute the authoritative dataset(s)
 	std::set<string>::iterator doms;
 	for (doms = domains.begin(); doms != domains.end(); ++doms) {
@@ -276,6 +280,7 @@ int main(int argc, char **argv) {
 	// 1.- replace the source/target with the dataset that is authoritative
 	// 2.- only consider those links where the subject or object is Authoritative of the current dataset
 
+	cout<<endl<<endl<<"Iterating the domains in datasetConnections with the domain links per dataset..."<<endl;
 	vector<DomainConnectionID> finalLinks;
 	map<unsigned int,unsigned int> sizeDomains; //size of each domain
 	map<string, vector<DomainConnection>>::iterator linksIt;
