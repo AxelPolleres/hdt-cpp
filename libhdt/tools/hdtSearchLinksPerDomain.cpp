@@ -349,7 +349,7 @@ int main(int argc, char **argv) {
 			cout<< ((double)numTriplesLiterals/numTriples)*100<< " % of links go to LITERAL"<<endl;
 			if (exports) {
 
-				ofstream exportFileCSV, exportFileJSON, exportMaxFileCSV;
+				ofstream exportFileCSV, exportFileJSON, exportMaxFileCSV,exportFileCloudCSV;
 				string name = "";
 				name.append(exportFileString).append(".csv");
 				exportFileCSV.open(name.c_str());
@@ -360,6 +360,11 @@ int main(int argc, char **argv) {
 				name = "max-";
 				name.append(exportFileString).append(".csv");
 				exportMaxFileCSV.open(name.c_str());
+
+				// file for the LOD cloud
+				name = "";
+				name.append(exportFileString).append("cloud.csv");
+				exportFileCloudCSV.open(name.c_str());
 
 				//iterate and export first shared, then subjects
 				exportFileCSV << "domain,links,color" << endl;
@@ -425,6 +430,18 @@ int main(int argc, char **argv) {
 				}
 				exportFileJSON << "]";
 				exportFileJSON.close();
+
+				// print all links in order to print the LOD cloud
+				exportFileCloudCSV << "source,target,links" << endl;
+				for (int i = 1; i <= differentDomains.size(); i++) {
+					for (int j = 1; j <= differentDomains.size(); j++) {
+						if (exportMatrix[i][j]!=0){
+							exportFileCloudCSV<<differentDomains[i]<<","<<differentDomains[j]<<","<<exportMatrix[i][j];
+						}
+					}
+				}
+				exportFileCloudCSV.close();
+
 
 				/*
 				 for (std::map<unsigned int, map<unsigned int, unsigned int>>::iterator it =
