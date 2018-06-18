@@ -436,7 +436,7 @@ int main(int argc, char **argv) {
 				for (int i = 1; i <= differentDomains.size(); i++) {
 					for (int j = 1; j <= differentDomains.size(); j++) {
 						if (exportMatrix[i][j]!=0){
-							exportFileCloudCSV<<differentDomains[i-1]<<","<<differentDomains[j-1]<<","<<exportMatrix[i][j];
+							exportFileCloudCSV<<differentDomains[i-1]<<","<<differentDomains[j-1]<<","<<exportMatrix[i][j]<<endl;
 						}
 					}
 				}
