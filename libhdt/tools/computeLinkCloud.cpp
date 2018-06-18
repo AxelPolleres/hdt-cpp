@@ -26,8 +26,8 @@
 using namespace hdt;
 using namespace std;
 
-string colorFewLinks = "#949494";
-int thresholdFewLinks = 50;
+
+int thresholdNamespaces = 50; //disregard namespaces with less than 100 entities
 bool import = false;
 hdt::HDT *hdt_file1;
 char delim = ' ';
@@ -165,7 +165,7 @@ int main(int argc, char **argv) {
 									+ nameFile.substr(0, nameFile.length() - 6);
 
 							// Import the range of domains from the input file. Second parameter is the number of shared items, but we don't really need it for this use case
-							Domains datasetDomain(nameFile, 0);
+							Domains datasetDomain(nameFile, 0,thresholdNamespaces);
 
 							datasets[datasetName] = datasetDomain;
 							datasetsGroups[datasetName] = pair<unsigned int,
