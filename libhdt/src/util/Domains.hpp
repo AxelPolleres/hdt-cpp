@@ -29,6 +29,8 @@ private:
 
 	unsigned int numShared; // number of shared subject-object elements
 
+	unsigned int thresholdNamespaces; //disregard namespace with less than a number of elements
+
 	char delim = ' ';
 
 
@@ -57,37 +59,39 @@ private:
 					istringstream(parts[1]) >> start;
 					istringstream(parts[2]) >> end;
 
-					if (numLine != 1) {
-						if ((prevEnd + 1) != start) {
-							throw std::runtime_error(
-									string(
-											"Non correlative ranges in " + rol
-													+ " ranges"));
+					if (end-start>thresholdNamespaces){ //only useful for the computation of the lod cloud
+						if (numLine != 1) {
+							if ((prevEnd + 1) != start) {
+								throw std::runtime_error(
+										string(
+												"Non correlative ranges in " + rol
+														+ " ranges"));
+							}
 						}
-					}
 
-					if (rol == "p") { //insert as many times as the range (potentially duplicated but good for querying)
-						for (int i = start; i <= end; i++) {
-							predicate_range.push_back(parts[0]);
+						if (rol == "p") { //insert as many times as the range (potentially duplicated but good for querying)
+							for (int i = start; i <= end; i++) {
+								predicate_range.push_back(parts[0]);
+							}
+						} else if (rol == "h") {
+							shared_terms.push_back(parts[0]);
+							shared_range.push_back(start); //just mark the beginning, we assumme correlative ranges
+
+							// build additional index with the occurrences
+							subjectsOccurrences[parts[0]]=subjectsOccurrences[parts[0]]+(end-start+1);
+
+						} else if (rol == "s") {
+							subject_terms.push_back(parts[0]);
+							subject_range.push_back(start); //just mark the beginning, we assumme correlative ranges
+
+							// build additional index with the occurrences
+							subjectsOccurrences[parts[0]]=subjectsOccurrences[parts[0]]+(end-start+1);
+
+						} else if (rol == "o") {
+							object_terms.push_back(parts[0]);
+							object_range.push_back(start); //just mark the beginning, we assumme correlative ranges
+
 						}
-					} else if (rol == "h") {
-						shared_terms.push_back(parts[0]);
-						shared_range.push_back(start); //just mark the beginning, we assumme correlative ranges
-
-						// build additional index with the occurrences
-					    subjectsOccurrences[parts[0]]=subjectsOccurrences[parts[0]]+(end-start+1);
-
-					} else if (rol == "s") {
-						subject_terms.push_back(parts[0]);
-						subject_range.push_back(start); //just mark the beginning, we assumme correlative ranges
-
-						// build additional index with the occurrences
-						subjectsOccurrences[parts[0]]=subjectsOccurrences[parts[0]]+(end-start+1);
-
-					} else if (rol == "o") {
-						object_terms.push_back(parts[0]);
-						object_range.push_back(start); //just mark the beginning, we assumme correlative ranges
-
 					}
 					prevEnd = end;
 
@@ -141,7 +145,7 @@ public:
 	 */
 
 	Domains() :
-			numShared(0),temp_next_range(0) {
+			numShared(0),temp_next_range(0),thresholdNamespaces(0) {
 		/*predicate_range = new vector<string>();
 		 shared_range = new vector<int>();
 		 subject_range = new vector<int>();
@@ -155,6 +159,7 @@ public:
 	Domains(string fileName, unsigned int num_Shared) {
 		numShared = num_Shared;
 		temp_next_range=0;
+		thresholdNamespaces=0;
 		/*	predicate_range = new vector<string>();
 		 shared_range = new vector<int>();
 		 subject_range = new vector<int>();
@@ -163,6 +168,25 @@ public:
 		 shared_terms = new vector<string>();
 		 subject_terms = new vector<string>();
 		 object_terms = new vector<string>();*/
+
+		string name = fileName;
+		name.append("-p.csv");
+		iterate_file_section(name, "p");
+		name = fileName;
+		name.append("-h.csv");
+		iterate_file_section(name, "h");
+		name = fileName;
+		name.append("-s.csv");
+		iterate_file_section(name, "s");
+		name = fileName;
+		name.append("-o.csv");
+		iterate_file_section(name, "o");
+
+	}
+	Domains(string fileName, unsigned int num_Shared, unsigned int threshold_Namespaces) {
+		numShared = num_Shared;
+		thresholdNamespaces = threshold_Namespaces;
+		temp_next_range=0;
 
 		string name = fileName;
 		name.append("-p.csv");
