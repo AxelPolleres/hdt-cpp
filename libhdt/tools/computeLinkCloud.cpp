@@ -234,7 +234,7 @@ int main(int argc, char **argv) {
 		std::copy(sharedDomain.begin(), sharedDomain.end(),
 				std::inserter(domains, domains.end()));
 	}
-	//cout << "domains size:" << domains.size() << endl;
+	cout << "  - Domains size:" << domains.size() << endl;
 	cout<<endl<<endl<<"Iterating the set of different domains and compute the authoritative dataset(s)..."<<endl;
 	// iterate the set of different domains and compute the authoritative dataset(s)
 	std::set<string>::iterator doms;
