@@ -324,7 +324,7 @@ public:
 	unsigned int getSubjectOccurrences(string domain){
 		return subjectsOccurrences[domain];
 	}
-	unsigned int getTotalOccurrencesPercentage(string domain){
+	double getTotalOccurrencesPercentage(string domain){
 			return totalOccurrencesPercentage[domain];
 		}
 	vector<string> getDomains(hdt::DictionarySection rol) {
