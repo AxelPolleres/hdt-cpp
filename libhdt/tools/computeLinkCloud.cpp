@@ -78,6 +78,15 @@ void help() {
 	//cout << "\t-v\tVerbose output" << endl;
 }
 
+// Driver function to sort the vector elements
+// by second element of pairs
+bool sortbysec(const pair<string,double> &a,
+              const pair<string,double> &b)
+{
+    return (a.second > b.second);
+}
+
+
 int main(int argc, char **argv) {
 	int c;
 	string inputFile;
@@ -239,21 +248,29 @@ int main(int argc, char **argv) {
 	// iterate the set of different domains and compute the authoritative dataset(s)
 	std::set<string>::iterator doms;
 	long numDoms=1;
+	cout << endl << "All counts of domains:" << endl;
+	// for each domain, iterate the dataset and compute the max
 	for (doms = domains.begin(); doms != domains.end(); ++doms) {
+
 		if (numDoms%1000==0){
 			cout<< "   "<<numDoms<<" domains"<<endl;
 		}
 		numDoms++;
 		string currentDomain = *doms;
-		unsigned int maxOccurrence = 0;
+		cout << endl << " - Domain: " << currentDomain << endl;
+		double maxOccurrence = 0;
 		vector<string> maxDatasets;
 		// iterate all datasets
 		map<string, Domains>::iterator subit;
+	 // Declaring vector of pairs
+		vector< pair <string,double> > allPercentages; // store all percentages in case we want to print them
 		for (subit = datasets.begin(); subit != datasets.end(); subit++) {
 			string dataset = subit->first;
 			Domains dom = subit->second;
-			unsigned int occs = dom.getSubjectOccurrences(currentDomain);
+			//unsigned int occs = dom.getSubjectOccurrences(currentDomain);
+			double occs = dom.getTotalOccurrencesPercentage(currentDomain);
 			if (occs > 0) {
+				allPercentages.push_back(make_pair(dataset,occs)); // store all percentages
 				if (occs > maxOccurrence) {
 					maxDatasets.clear();
 					maxDatasets.push_back(dataset);
@@ -263,13 +280,21 @@ int main(int argc, char **argv) {
 				}
 			}
 		}
+		// sort by occurrence
+		sort(allPercentages.begin(), allPercentages.end(), sortbysec);
+		// print all occurrences
+		for (int i=0;i<allPercentages.size();i++){
+			cout << "    + dataset: " << allPercentages[i].first << " -" << allPercentages[i].second<< endl;
+
+		}
+
 		// store the authoritative Dataset for the current domain
 		authoritativeDataset[currentDomain] = maxDatasets;
 
 	}
 
 	// print authoritative domains
-	cout << endl << "Authoritative domains:" << endl;
+	cout << endl << endl << endl << "Authoritative domains:" << endl;
 	map<string, vector<string>>::iterator auth;
 	for (auth = authoritativeDataset.begin();
 			auth != authoritativeDataset.end(); auth++) {
@@ -380,3 +405,4 @@ int main(int argc, char **argv) {
 	exportFile.close();
 
 }
+
