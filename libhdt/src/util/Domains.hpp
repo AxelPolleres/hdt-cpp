@@ -242,6 +242,9 @@ public:
 		name.append("-o.csv");
 		iterate_file_section(name, "o");
 
+		// adjust the percentage in totalOccurrencesPercentage
+		adjustPercentage();
+
 	}
 	void adjustPercentage(){
 
