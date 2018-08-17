@@ -27,7 +27,7 @@ using namespace hdt;
 using namespace std;
 
 
-int thresholdNamespaces = 50; //disregard namespaces with less than 100 entities
+int thresholdNamespaces = 100; //disregard namespaces with less than 100 entities
 bool import = false;
 hdt::HDT *hdt_file1;
 char delim = ' ';
@@ -284,7 +284,7 @@ int main(int argc, char **argv) {
 		sort(allPercentages.begin(), allPercentages.end(), sortbysec);
 		// print all occurrences
 		for (int i=0;i<allPercentages.size();i++){
-			cout << "    + dataset: " << allPercentages[i].first << " -" << allPercentages[i].second<< endl;
+			cout << "    + dataset: " << allPercentages[i].first << " -> " << allPercentages[i].second<< "%"<< endl;
 
 		}
 
