@@ -254,7 +254,7 @@ public:
 
 		// Iterate total Occurrences and update them with the percentage
 		for (it = totalOccurrencesPercentage.begin(); it != totalOccurrencesPercentage.end(); it++) {
-			totalOccurrencesPercentage[it->first]=((double)it->second)/totalURITerms;
+			totalOccurrencesPercentage[it->first]=(((double)it->second)/totalURITerms)*100;
 		}
 	}
 
