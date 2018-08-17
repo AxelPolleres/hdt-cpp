@@ -247,9 +247,11 @@ public:
 
 		map<string,double>::iterator it;
 
+		cout<<"totalURITerms:"<<totalURITerms<<endl;
+
 		// Iterate total Occurrences and update them with the percentage
 		for (it = totalOccurrencesPercentage.begin(); it != totalOccurrencesPercentage.end(); it++) {
-			totalOccurrencesPercentage[it->first]=((double)it->second/totalURITerms);
+			totalOccurrencesPercentage[it->first]=((double)it->second)/totalURITerms;
 		}
 	}
 
