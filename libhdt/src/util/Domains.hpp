@@ -25,6 +25,7 @@ private:
 	vector<string> object_terms; //different domains/PLDs/prefixes for each range in object_range
 
 	map<string,unsigned int> subjectsOccurrences; //additional index to count the number of different terms for each domains/PLDs/prefixes (aggregating subjects and shared)
+	map<string,double> totalOccurrencesPercentage; //additional index to count the % of the number of different terms for each domains/PLDs/prefixes (aggregating objects, subjects and shared)
 
 
 	unsigned int numShared; // number of shared subject-object elements
@@ -32,6 +33,12 @@ private:
 	unsigned int thresholdNamespaces; //disregard namespace with less than a number of elements
 
 	char delim = ' ';
+
+	unsigned int totalURITerms; //total number of URI subject and object terms (excluding LITERALS and BNODES)
+	unsigned int totalLiterals; //total number of LITERALS
+	unsigned int totalBnodes; //total number of BNODEs
+	string literalDomain = "LITERAL";
+	string bnodeDomain="BNODE";
 
 
 	vector<string> split(const string &s, char delim) {
@@ -77,19 +84,50 @@ private:
 							shared_terms.push_back(parts[0]);
 							shared_range.push_back(start); //just mark the beginning, we assumme correlative ranges
 
+							if (parts[0]==bnodeDomain){
+								totalBnodes=end-start+1;
+								cout<<"Bnodes:"<<totalBnodes;
+							}
+							else{
 							// build additional index with the occurrences
 							subjectsOccurrences[parts[0]]=subjectsOccurrences[parts[0]]+(end-start+1);
+							totalOccurrencesPercentage[parts[0]] = totalOccurrencesPercentage[parts[0]]+(end-start+1);
+
+							totalURITerms+=end-start+1;
+							}
 
 						} else if (rol == "s") {
 							subject_terms.push_back(parts[0]);
 							subject_range.push_back(start); //just mark the beginning, we assumme correlative ranges
 
+							if (parts[0]==bnodeDomain){
+								totalBnodes=end-start+1;
+								cout<<"Bnodes:"<<totalBnodes;
+							}
+							else{
 							// build additional index with the occurrences
 							subjectsOccurrences[parts[0]]=subjectsOccurrences[parts[0]]+(end-start+1);
+							totalOccurrencesPercentage[parts[0]] = totalOccurrencesPercentage[parts[0]]+(end-start+1);
+
+							totalURITerms+=end-start+1;
+							}
 
 						} else if (rol == "o") {
 							object_terms.push_back(parts[0]);
 							object_range.push_back(start); //just mark the beginning, we assumme correlative ranges
+
+							if (parts[0]==literalDomain){
+								totalLiterals=end-start+1;
+								cout<<"literals:"<<totalLiterals;
+							}
+							else if (parts[0]==bnodeDomain){
+								totalBnodes=end-start+1;
+								cout<<"Bnodes:"<<totalBnodes;
+							}
+							else{ // avoid saving the occurrences if it is a literal or bnode
+								totalOccurrencesPercentage[parts[0]] = totalOccurrencesPercentage[parts[0]]+(end-start+1);
+								totalURITerms+=end-start+1;
+							}
 
 						}
 					}
@@ -182,6 +220,9 @@ public:
 		name.append("-o.csv");
 		iterate_file_section(name, "o");
 
+		// adjust the percentage in totalOccurrencesPercentage
+		adjustPercentage();
+
 	}
 	Domains(string fileName, unsigned int num_Shared, unsigned int threshold_Namespaces) {
 		numShared = num_Shared;
@@ -201,6 +242,15 @@ public:
 		name.append("-o.csv");
 		iterate_file_section(name, "o");
 
+	}
+	void adjustPercentage(){
+
+		map<string,double>::iterator it;
+
+		// Iterate total Occurrences and update them with the percentage
+		for (it = totalOccurrencesPercentage.begin(); it != totalOccurrencesPercentage.end(); it++) {
+			totalOccurrencesPercentage[it->first]=((double)it->second/totalURITerms);
+		}
 	}
 
 	pair<string,unsigned int> getDomain(unsigned int id, hdt::TripleComponentRole rol) {
@@ -269,6 +319,9 @@ public:
 	unsigned int getSubjectOccurrences(string domain){
 		return subjectsOccurrences[domain];
 	}
+	unsigned int getTotalOccurrencesPercentage(string domain){
+			return totalOccurrencesPercentage[domain];
+		}
 	vector<string> getDomains(hdt::DictionarySection rol) {
 		if (rol == hdt::NOT_SHARED_SUBJECT) {
 			return subject_terms;
