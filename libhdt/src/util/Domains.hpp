@@ -25,7 +25,11 @@ private:
 	vector<string> object_terms; //different domains/PLDs/prefixes for each range in object_range
 
 	map<string,unsigned int> subjectsOccurrences; //additional index to count the number of different terms for each domains/PLDs/prefixes (aggregating subjects and shared)
-	map<string,double> totalOccurrencesPercentage; //additional index to count the % of the number of different terms for each domains/PLDs/prefixes (aggregating objects, subjects and shared)
+
+	map<string,double> subjectObjectsOccurrencesPercentage; //additional index to count the % of the number of different subjectObjects terms for each domains/PLDs/prefixes (excluding LITERALS and bnodes)
+	map<string,double> subjectsOccurrencesPercentage; //additional index to count the % of the number of different subject terms for each domains/PLDs/prefixes (excluding LITERALS and bnodes)
+	map<string,double> objectsOccurrencesPercentage; //additional index to count the % of the number of different object terms for each domains/PLDs/prefixes (excluding LITERALS and bnodes)
+	map<string,double> totalOccurrencesPercentage; //additional index to count the % of the number of different terms for each domains/PLDs/prefixes (aggregating objects, subjects and shared, excluding LITERALS and bnodes)
 
 
 	unsigned int numShared; // number of shared subject-object elements
@@ -37,6 +41,9 @@ private:
 	unsigned int totalURITerms; //total number of URI subject and object terms (excluding LITERALS and BNODES)
 	unsigned int totalLiterals; //total number of LITERALS
 	unsigned int totalBnodes; //total number of BNODEs
+	unsigned int totalUniqueSubjects;  //total number of URI subject terms (excluding BNODES)
+	unsigned int totalUniqueObjects; //total number of URI object terms (excluding LITERALS and BNODES)
+	unsigned int totalSubjectObjects; //total number of URI subjectObject terms (excluding BNODES)
 	string literalDomain = "LITERAL";
 	string bnodeDomain="BNODE";
 
@@ -91,9 +98,11 @@ private:
 							else{
 							// build additional index with the occurrences
 							subjectsOccurrences[parts[0]]=subjectsOccurrences[parts[0]]+(end-start+1);
+							subjectObjectsOccurrencesPercentage[parts[0]]=subjectObjectsOccurrencesPercentage[parts[0]]+(end-start+1);
 							totalOccurrencesPercentage[parts[0]] = totalOccurrencesPercentage[parts[0]]+(end-start+1);
 
 							totalURITerms+=end-start+1;
+							totalSubjectObjects+=end-start+1;
 							}
 
 						} else if (rol == "s") {
@@ -107,9 +116,11 @@ private:
 							else{
 							// build additional index with the occurrences
 							subjectsOccurrences[parts[0]]=subjectsOccurrences[parts[0]]+(end-start+1);
+							subjectsOccurrencesPercentage[parts[0]] = subjectsOccurrencesPercentage[parts[0]]+(end-start+1);
 							totalOccurrencesPercentage[parts[0]] = totalOccurrencesPercentage[parts[0]]+(end-start+1);
 
 							totalURITerms+=end-start+1;
+							totalUniqueSubjects+=end-start+1;
 							}
 
 						} else if (rol == "o") {
@@ -125,8 +136,10 @@ private:
 								cout<<"Bnodes:"<<totalBnodes;
 							}
 							else{ // avoid saving the occurrences if it is a literal or bnode
+								objectsOccurrencesPercentage[parts[0]] = objectsOccurrencesPercentage[parts[0]]+(end-start+1);
 								totalOccurrencesPercentage[parts[0]] = totalOccurrencesPercentage[parts[0]]+(end-start+1);
 								totalURITerms+=end-start+1;
+								totalUniqueObjects+=end-start+1;
 							}
 
 						}
@@ -250,11 +263,23 @@ public:
 
 		map<string,double>::iterator it;
 
-		cout<<"totalURITerms:"<<totalURITerms<<endl;
-
 		// Iterate total Occurrences and update them with the percentage
 		for (it = totalOccurrencesPercentage.begin(); it != totalOccurrencesPercentage.end(); it++) {
 			totalOccurrencesPercentage[it->first]=(((double)it->second)/totalURITerms)*100;
+		}
+
+		// Iterate subjectObject Occurrences and update them with the percentage
+		for (it = subjectObjectsOccurrencesPercentage.begin(); it != subjectObjectsOccurrencesPercentage.end(); it++) {
+			subjectObjectsOccurrencesPercentage[it->first]=(((double)it->second)/totalSubjectObjects)*100;
+		}
+
+		// Iterate unique subject Occurrences and update them with the percentage
+		for (it = subjectsOccurrencesPercentage.begin(); it != subjectsOccurrencesPercentage.end(); it++) {
+			subjectsOccurrencesPercentage[it->first]=(((double)it->second)/totalUniqueSubjects)*100;
+		}
+		// Iterate unique object Occurrences and update them with the percentage
+		for (it = objectsOccurrencesPercentage.begin(); it != objectsOccurrencesPercentage.end(); it++) {
+			objectsOccurrencesPercentage[it->first]=(((double)it->second)/totalUniqueObjects)*100;
 		}
 	}
 
@@ -325,8 +350,17 @@ public:
 		return subjectsOccurrences[domain];
 	}
 	double getTotalOccurrencesPercentage(string domain){
-			return totalOccurrencesPercentage[domain];
-		}
+		return totalOccurrencesPercentage[domain];
+	}
+	double getSubjectObjectsOccurrencesPercentage(string domain){
+		return subjectObjectsOccurrencesPercentage[domain];
+	}
+	double getSubjectsOccurrencesPercentage(string domain){
+		return subjectsOccurrencesPercentage[domain];
+	}
+	double getObjectsOccurrencesPercentage(string domain){
+		return objectsOccurrencesPercentage[domain];
+	}
 	vector<string> getDomains(hdt::DictionarySection rol) {
 		if (rol == hdt::NOT_SHARED_SUBJECT) {
 			return subject_terms;
