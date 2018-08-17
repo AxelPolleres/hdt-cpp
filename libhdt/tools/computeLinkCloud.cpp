@@ -284,7 +284,7 @@ int main(int argc, char **argv) {
 		sort(allPercentages.begin(), allPercentages.end(), sortbysec);
 		// print all occurrences
 		for (int i=0;i<allPercentages.size();i++){
-			cout << "    + dataset: " << allPercentages[i].first << " -> " << allPercentages[i].second<< " %  (sh:"<<datasets[allPercentages[i].first].getSubjectsOccurrencesPercentage(currentDomain)<< " %; s:"<<datasets[allPercentages[i].first].getSubjectsOccurrencesPercentage(currentDomain)<< " %; o:"<<datasets[allPercentages[i].first].getObjectsOccurrencesPercentage(currentDomain)<<")"<<endl;
+			cout << "    + dataset: " << allPercentages[i].first << " -> " << allPercentages[i].second<< " %  (sh:"<<datasets[allPercentages[i].first].getSubjectObjectsOccurrencesPercentage(currentDomain)<< " %; s:"<<datasets[allPercentages[i].first].getSubjectsOccurrencesPercentage(currentDomain)<< " %; o:"<<datasets[allPercentages[i].first].getObjectsOccurrencesPercentage(currentDomain)<<")"<<endl;
 
 		}
 
