@@ -300,7 +300,7 @@ public:
 		for (it = totalOccurrencesPercentage.begin();
 				it != totalOccurrencesPercentage.end(); it++) {
 			totalOccurrencesPercentage[it->first] = (((double) it->second)
-					/ totalURITerms+(totalOtherLessThreshold_UniqueObjects+totalOtherLessThreshold_UniqueSubjects+totalOtherLessThreshold_shared)) * 100;
+					/ (totalURITerms+totalOtherLessThreshold_UniqueObjects+totalOtherLessThreshold_UniqueSubjects+totalOtherLessThreshold_shared)) * 100;
 		}
 
 		// Iterate subjectObject Occurrences and update them with the percentage
