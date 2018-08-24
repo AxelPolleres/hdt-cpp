@@ -24,13 +24,12 @@ private:
 	vector<string> subject_terms; //different domains/PLDs/prefixes for each range in subject_range
 	vector<string> object_terms; //different domains/PLDs/prefixes for each range in object_range
 
-	map<string,unsigned int> subjectsOccurrences; //additional index to count the number of different terms for each domains/PLDs/prefixes (aggregating subjects and shared)
+	map<string, unsigned int> subjectsOccurrences; //additional index to count the number of different terms for each domains/PLDs/prefixes (aggregating subjects and shared)
 
-	map<string,double> subjectObjectsOccurrencesPercentage; //additional index to count the % of the number of different subjectObjects terms for each domains/PLDs/prefixes (excluding LITERALS and bnodes)
-	map<string,double> subjectsOccurrencesPercentage; //additional index to count the % of the number of different subject terms for each domains/PLDs/prefixes (excluding LITERALS and bnodes)
-	map<string,double> objectsOccurrencesPercentage; //additional index to count the % of the number of different object terms for each domains/PLDs/prefixes (excluding LITERALS and bnodes)
-	map<string,double> totalOccurrencesPercentage; //additional index to count the % of the number of different terms for each domains/PLDs/prefixes (aggregating objects, subjects and shared, excluding LITERALS and bnodes)
-
+	map<string, double> subjectObjectsOccurrencesPercentage; //additional index to count the % of the number of different subjectObjects terms for each domains/PLDs/prefixes (excluding LITERALS and bnodes)
+	map<string, double> subjectsOccurrencesPercentage; //additional index to count the % of the number of different subject terms for each domains/PLDs/prefixes (excluding LITERALS and bnodes)
+	map<string, double> objectsOccurrencesPercentage; //additional index to count the % of the number of different object terms for each domains/PLDs/prefixes (excluding LITERALS and bnodes)
+	map<string, double> totalOccurrencesPercentage; //additional index to count the % of the number of different terms for each domains/PLDs/prefixes (aggregating objects, subjects and shared, excluding LITERALS and bnodes)
 
 	unsigned int numShared; // number of shared subject-object elements
 
@@ -41,12 +40,16 @@ private:
 	unsigned int totalURITerms; //total number of URI subject and object terms (excluding LITERALS and BNODES)
 	unsigned int totalLiterals; //total number of LITERALS
 	unsigned int totalBnodes; //total number of BNODEs
-	unsigned int totalUniqueSubjects;  //total number of URI subject terms (excluding BNODES)
+	unsigned int totalUniqueSubjects; //total number of URI subject terms (excluding BNODES)
 	unsigned int totalUniqueObjects; //total number of URI object terms (excluding LITERALS and BNODES)
 	unsigned int totalSubjectObjects; //total number of URI subjectObject terms (excluding BNODES)
-	string literalDomain = "LITERAL";
-	string bnodeDomain="BNODE";
 
+	unsigned int totalOtherLessThreshold_shared; //total number of other terms occurring less than the threshold
+	unsigned int totalOtherLessThreshold_UniqueSubjects; //total number of other terms occurring less than the threshold
+	unsigned int totalOtherLessThreshold_UniqueObjects; //total number of other terms occurring less than the threshold
+
+	string literalDomain = "LITERAL";
+	string bnodeDomain = "BNODE";
 
 	vector<string> split(const string &s, char delim) {
 		stringstream ss(s);
@@ -73,13 +76,13 @@ private:
 					istringstream(parts[1]) >> start;
 					istringstream(parts[2]) >> end;
 
-					if (end-start>thresholdNamespaces){ //only useful for the computation of the lod cloud
+					if (end - start > thresholdNamespaces) { //only useful for the computation of the lod cloud
 						if (numLine != 1) {
 							if ((prevEnd + 1) != start) {
 								throw std::runtime_error(
 										string(
-												"Non correlative ranges in " + rol
-														+ " ranges"));
+												"Non correlative ranges in "
+														+ rol + " ranges"));
 							}
 						}
 
@@ -91,59 +94,91 @@ private:
 							shared_terms.push_back(parts[0]);
 							shared_range.push_back(start); //just mark the beginning, we assumme correlative ranges
 
-							if (parts[0]==bnodeDomain){
-								totalBnodes=end-start+1;
-								cout<<"Bnodes:"<<totalBnodes;
-							}
-							else{
-							// build additional index with the occurrences
-							subjectsOccurrences[parts[0]]=subjectsOccurrences[parts[0]]+(end-start+1);
-							subjectObjectsOccurrencesPercentage[parts[0]]=subjectObjectsOccurrencesPercentage[parts[0]]+(end-start+1);
-							totalOccurrencesPercentage[parts[0]] = totalOccurrencesPercentage[parts[0]]+(end-start+1);
+							if (parts[0] == bnodeDomain) {
+								totalBnodes = end - start + 1;
+								cout << "Bnodes:" << totalBnodes;
+							} else {
+								// build additional index with the occurrences
+								subjectsOccurrences[parts[0]] =
+										subjectsOccurrences[parts[0]]
+												+ (end - start + 1);
+								subjectObjectsOccurrencesPercentage[parts[0]] =
+										subjectObjectsOccurrencesPercentage[parts[0]]
+												+ (end - start + 1);
+								totalOccurrencesPercentage[parts[0]] =
+										totalOccurrencesPercentage[parts[0]]
+												+ (end - start + 1);
 
-							totalURITerms+=end-start+1;
-							totalSubjectObjects+=end-start+1;
+								totalURITerms += end - start + 1;
+								totalSubjectObjects += end - start + 1;
 							}
 
 						} else if (rol == "s") {
 							subject_terms.push_back(parts[0]);
 							subject_range.push_back(start); //just mark the beginning, we assumme correlative ranges
 
-							if (parts[0]==bnodeDomain){
-								totalBnodes=end-start+1;
-								cout<<"Bnodes:"<<totalBnodes;
-							}
-							else{
-							// build additional index with the occurrences
-							subjectsOccurrences[parts[0]]=subjectsOccurrences[parts[0]]+(end-start+1);
-							subjectsOccurrencesPercentage[parts[0]] = subjectsOccurrencesPercentage[parts[0]]+(end-start+1);
-							totalOccurrencesPercentage[parts[0]] = totalOccurrencesPercentage[parts[0]]+(end-start+1);
+							if (parts[0] == bnodeDomain) {
+								totalBnodes = end - start + 1;
+								cout << "Bnodes:" << totalBnodes;
+							} else {
+								// build additional index with the occurrences
+								subjectsOccurrences[parts[0]] =
+										subjectsOccurrences[parts[0]]
+												+ (end - start + 1);
+								subjectsOccurrencesPercentage[parts[0]] =
+										subjectsOccurrencesPercentage[parts[0]]
+												+ (end - start + 1);
+								totalOccurrencesPercentage[parts[0]] =
+										totalOccurrencesPercentage[parts[0]]
+												+ (end - start + 1);
 
-							totalURITerms+=end-start+1;
-							totalUniqueSubjects+=end-start+1;
+								totalURITerms += end - start + 1;
+								totalUniqueSubjects += end - start + 1;
 							}
 
 						} else if (rol == "o") {
 							object_terms.push_back(parts[0]);
 							object_range.push_back(start); //just mark the beginning, we assumme correlative ranges
 
-							if (parts[0]==literalDomain){
-								totalLiterals=end-start+1;
-								cout<<"literals:"<<totalLiterals;
-							}
-							else if (parts[0]==bnodeDomain){
-								totalBnodes=end-start+1;
-								cout<<"Bnodes:"<<totalBnodes;
-							}
-							else{ // avoid saving the occurrences if it is a literal or bnode
-								objectsOccurrencesPercentage[parts[0]] = objectsOccurrencesPercentage[parts[0]]+(end-start+1);
-								totalOccurrencesPercentage[parts[0]] = totalOccurrencesPercentage[parts[0]]+(end-start+1);
-								totalURITerms+=end-start+1;
-								totalUniqueObjects+=end-start+1;
+							if (parts[0] == literalDomain) {
+								totalLiterals = end - start + 1;
+								cout << "literals:" << totalLiterals;
+							} else if (parts[0] == bnodeDomain) {
+								totalBnodes = end - start + 1;
+								cout << "Bnodes:" << totalBnodes;
+							} else { // avoid saving the occurrences if it is a literal or bnode
+								objectsOccurrencesPercentage[parts[0]] =
+										objectsOccurrencesPercentage[parts[0]]
+												+ (end - start + 1);
+								totalOccurrencesPercentage[parts[0]] =
+										totalOccurrencesPercentage[parts[0]]
+												+ (end - start + 1);
+								totalURITerms += end - start + 1;
+								totalUniqueObjects += end - start + 1;
 							}
 
 						}
+					} else {
+						if (parts[0] == literalDomain) {
+							totalLiterals = end - start + 1;
+							cout << "literals:" << totalLiterals;
+						} else if (parts[0] == bnodeDomain) {
+							totalBnodes = end - start + 1;
+							cout << "Bnodes:" << totalBnodes;
+						} else { // account as "totalOtherLessThreshold"
+							if (rol == "h") {
+								totalOtherLessThreshold_shared +=
+										totalOtherLessThreshold_shared;
+							} else if (rol == "s") {
+								totalOtherLessThreshold_UniqueSubjects +=
+										totalOtherLessThreshold_UniqueSubjects;
+							} else if (rol == "o") {
+								totalOtherLessThreshold_UniqueObjects +=
+										totalOtherLessThreshold_UniqueObjects;
+							}
+						}
 					}
+
 					prevEnd = end;
 
 				}
@@ -153,8 +188,9 @@ private:
 		}
 	}
 
-	pair<string,unsigned int> getDomainInRol(unsigned int id,vector<unsigned int> &vect_range,vector<string> &vect_terms) {
-		string ret="";
+	pair<string, unsigned int> getDomainInRol(unsigned int id,
+			vector<unsigned int> &vect_range, vector<string> &vect_terms) {
+		string ret = "";
 		//search for ID in the vector of ranges
 		vector<unsigned int>::iterator low = std::lower_bound(
 				vect_range.begin(), vect_range.end(), id);
@@ -173,19 +209,15 @@ private:
 		//cout << "domain is:" << ret << endl;
 
 		// store the next range as a temporal variable (to save more checks in the future)
-		if ((position+1)<vect_range.size()){
-			temp_next_range=vect_range[(position+1)];
-		}
-		else{
+		if ((position + 1) < vect_range.size()) {
+			temp_next_range = vect_range[(position + 1)];
+		} else {
 			//store the maximum as it won't be more than this
-			temp_next_range=UINT_MAX;
+			temp_next_range = UINT_MAX;
 		}
 
-
-		return pair<string,unsigned int>(ret,position);
+		return pair<string, unsigned int>(ret, position);
 	}
-
-
 
 public:
 	/** Constructor
@@ -196,7 +228,7 @@ public:
 	 */
 
 	Domains() :
-			numShared(0),temp_next_range(0),thresholdNamespaces(0) {
+			numShared(0), temp_next_range(0), thresholdNamespaces(0) {
 		/*predicate_range = new vector<string>();
 		 shared_range = new vector<int>();
 		 subject_range = new vector<int>();
@@ -209,8 +241,8 @@ public:
 
 	Domains(string fileName, unsigned int num_Shared) {
 		numShared = num_Shared;
-		temp_next_range=0;
-		thresholdNamespaces=0;
+		temp_next_range = 0;
+		thresholdNamespaces = 0;
 		/*	predicate_range = new vector<string>();
 		 shared_range = new vector<int>();
 		 subject_range = new vector<int>();
@@ -237,10 +269,11 @@ public:
 		adjustPercentage();
 
 	}
-	Domains(string fileName, unsigned int num_Shared, unsigned int threshold_Namespaces) {
+	Domains(string fileName, unsigned int num_Shared,
+			unsigned int threshold_Namespaces) {
 		numShared = num_Shared;
 		thresholdNamespaces = threshold_Namespaces;
-		temp_next_range=0;
+		temp_next_range = 0;
 
 		string name = fileName;
 		name.append("-p.csv");
@@ -259,52 +292,60 @@ public:
 		adjustPercentage();
 
 	}
-	void adjustPercentage(){
+	void adjustPercentage() {
 
-		map<string,double>::iterator it;
+		map<string, double>::iterator it;
 
 		// Iterate total Occurrences and update them with the percentage
-		for (it = totalOccurrencesPercentage.begin(); it != totalOccurrencesPercentage.end(); it++) {
-			totalOccurrencesPercentage[it->first]=(((double)it->second)/totalURITerms)*100;
+		for (it = totalOccurrencesPercentage.begin();
+				it != totalOccurrencesPercentage.end(); it++) {
+			totalOccurrencesPercentage[it->first] = (((double) it->second)
+					/ totalURITerms+(totalOtherLessThreshold_UniqueObjects+totalOtherLessThreshold_UniqueSubjects+totalOtherLessThreshold_shared)) * 100;
 		}
 
 		// Iterate subjectObject Occurrences and update them with the percentage
-		for (it = subjectObjectsOccurrencesPercentage.begin(); it != subjectObjectsOccurrencesPercentage.end(); it++) {
-			subjectObjectsOccurrencesPercentage[it->first]=(((double)it->second)/totalSubjectObjects)*100;
+		for (it = subjectObjectsOccurrencesPercentage.begin();
+				it != subjectObjectsOccurrencesPercentage.end(); it++) {
+			subjectObjectsOccurrencesPercentage[it->first] =
+					(((double) it->second) / (totalSubjectObjects+totalOtherLessThreshold_shared)) * 100;
 		}
 
 		// Iterate unique subject Occurrences and update them with the percentage
-		for (it = subjectsOccurrencesPercentage.begin(); it != subjectsOccurrencesPercentage.end(); it++) {
-			subjectsOccurrencesPercentage[it->first]=(((double)it->second)/totalUniqueSubjects)*100;
+		for (it = subjectsOccurrencesPercentage.begin();
+				it != subjectsOccurrencesPercentage.end(); it++) {
+			subjectsOccurrencesPercentage[it->first] = (((double) it->second)
+					/ (totalUniqueSubjects+totalOtherLessThreshold_UniqueSubjects)) * 100;
 		}
 		// Iterate unique object Occurrences and update them with the percentage
-		for (it = objectsOccurrencesPercentage.begin(); it != objectsOccurrencesPercentage.end(); it++) {
-			objectsOccurrencesPercentage[it->first]=(((double)it->second)/totalUniqueObjects)*100;
+		for (it = objectsOccurrencesPercentage.begin();
+				it != objectsOccurrencesPercentage.end(); it++) {
+			objectsOccurrencesPercentage[it->first] = (((double) it->second)
+					/ (totalUniqueObjects+totalOtherLessThreshold_UniqueObjects)) * 100;
 		}
 	}
 
-	pair<string,unsigned int> getDomain(unsigned int id, hdt::TripleComponentRole rol) {
-		pair<string,unsigned int> ret;
+	pair<string, unsigned int> getDomain(unsigned int id,
+			hdt::TripleComponentRole rol) {
+		pair<string, unsigned int> ret;
 
-		if (rol==hdt::PREDICATE){
-			return pair<string,unsigned int>(predicate_range[(id-1)],id-1); // in predicates we store one id per position
+		if (rol == hdt::PREDICATE) {
+			return pair<string, unsigned int>(predicate_range[(id - 1)], id - 1); // in predicates we store one id per position
 		}
 
 		//first, check the ID to see if we have to look in shared
 		if (id <= numShared) {
-			ret = getDomainInRol(id,shared_range,shared_terms);
+			ret = getDomainInRol(id, shared_range, shared_terms);
 		} else {
 
 			if (rol == hdt::SUBJECT) {
 				//search for ID in the vector of ranges
-				ret = getDomainInRol(id,subject_range,subject_terms);
+				ret = getDomainInRol(id, subject_range, subject_terms);
 			} else if (rol == hdt::OBJECT) {
-				ret = getDomainInRol(id,object_range,object_terms);
+				ret = getDomainInRol(id, object_range, object_terms);
 			}
 		}
 		return ret;
 	}
-
 
 	void verbose_print() {
 		cout << "== PREDICATES ==" << endl;
@@ -328,50 +369,44 @@ public:
 
 	}
 
-	unsigned int getNext_range(){
+	unsigned int getNext_range() {
 		return temp_next_range;
 	}
 
-	vector<string> getTerms(string rol){
-		if (rol=="subject" || rol =="s"){
+	vector<string> getTerms(string rol) {
+		if (rol == "subject" || rol == "s") {
 			return subject_terms;
-		}
-		else if (rol=="shared" || rol=="h"){
+		} else if (rol == "shared" || rol == "h") {
 			return shared_terms;
-		}
-		else if (rol=="object" || rol =="o"){
+		} else if (rol == "object" || rol == "o") {
 			return object_terms;
-		}
-		else
+		} else
 			return predicate_range;
 	}
 
-	unsigned int getSubjectOccurrences(string domain){
+	unsigned int getSubjectOccurrences(string domain) {
 		return subjectsOccurrences[domain];
 	}
-	double getTotalOccurrencesPercentage(string domain){
+	double getTotalOccurrencesPercentage(string domain) {
 		return totalOccurrencesPercentage[domain];
 	}
-	double getSubjectObjectsOccurrencesPercentage(string domain){
+	double getSubjectObjectsOccurrencesPercentage(string domain) {
 		return subjectObjectsOccurrencesPercentage[domain];
 	}
-	double getSubjectsOccurrencesPercentage(string domain){
+	double getSubjectsOccurrencesPercentage(string domain) {
 		return subjectsOccurrencesPercentage[domain];
 	}
-	double getObjectsOccurrencesPercentage(string domain){
+	double getObjectsOccurrencesPercentage(string domain) {
 		return objectsOccurrencesPercentage[domain];
 	}
 	vector<string> getDomains(hdt::DictionarySection rol) {
 		if (rol == hdt::NOT_SHARED_SUBJECT) {
 			return subject_terms;
-		}
-		else if (rol == hdt::SHARED_SUBJECT || rol == hdt::SHARED_OBJECT) {
+		} else if (rol == hdt::SHARED_SUBJECT || rol == hdt::SHARED_OBJECT) {
 			return shared_terms;
-		}
-		else if (rol == hdt::NOT_SHARED_OBJECT) {
+		} else if (rol == hdt::NOT_SHARED_OBJECT) {
 			return object_terms;
-		}
-		else
+		} else
 			return predicate_range;
 	}
 
