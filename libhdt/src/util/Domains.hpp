@@ -168,13 +168,13 @@ private:
 						} else { // account as "totalOtherLessThreshold"
 							if (rol == "h") {
 								totalOtherLessThreshold_shared +=
-										totalOtherLessThreshold_shared;
+										(end - start + 1);
 							} else if (rol == "s") {
 								totalOtherLessThreshold_UniqueSubjects +=
-										totalOtherLessThreshold_UniqueSubjects;
+										(end - start + 1);
 							} else if (rol == "o") {
 								totalOtherLessThreshold_UniqueObjects +=
-										totalOtherLessThreshold_UniqueObjects;
+										(end - start + 1);
 							}
 						}
 					}
