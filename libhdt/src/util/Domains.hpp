@@ -44,9 +44,9 @@ private:
 	unsigned int totalUniqueObjects; //total number of URI object terms (excluding LITERALS and BNODES)
 	unsigned int totalSubjectObjects; //total number of URI subjectObject terms (excluding BNODES)
 
-	unsigned int totalOtherLessThreshold_shared; //total number of other terms occurring less than the threshold
-	unsigned int totalOtherLessThreshold_UniqueSubjects; //total number of other terms occurring less than the threshold
-	unsigned int totalOtherLessThreshold_UniqueObjects; //total number of other terms occurring less than the threshold
+	unsigned int totalOtherLessThreshold_shared=0; //total number of other terms occurring less than the threshold
+	unsigned int totalOtherLessThreshold_UniqueSubjects=0; //total number of other terms occurring less than the threshold
+	unsigned int totalOtherLessThreshold_UniqueObjects=0; //total number of other terms occurring less than the threshold
 
 	string literalDomain = "LITERAL";
 	string bnodeDomain = "BNODE";
