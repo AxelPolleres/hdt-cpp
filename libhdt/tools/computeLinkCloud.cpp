@@ -364,21 +364,21 @@ int main(int argc, char **argv) {
 	cout << endl << endl << endl << "Histograms:" << endl;
 	cout << endl << "Unique: " << countUniqueCases << endl;
 
-	cout << "-  x > 75%:" << histogramUnique[0] << endl;
-	cout << "- 50% <= x < 75%:" << histogramUnique[1] << endl;
+	cout << "-  x > 75%:" << histogramUnique[3] << endl;
+	cout << "- 50% <= x < 75%:" << histogramUnique[2] << endl;
 	cout << "- 25% <= x < 50%:" << histogramUnique[1] << endl;
 	cout << "-  x < 25%:" << histogramUnique[0] << endl;
 
 	cout << endl << "Multiple: " << countMultipleCases << endl;
 	cout << " * Top: " << countUniqueCases << endl;
-	cout << "-  x > 75%:" << histogramMultiple_Top[0] << endl;
-	cout << "- 50% <= x < 75%:" << histogramMultiple_Top[1] << endl;
+	cout << "-  x > 75%:" << histogramMultiple_Top[3] << endl;
+	cout << "- 50% <= x < 75%:" << histogramMultiple_Top[2] << endl;
 	cout << "- 25% <= x < 50%:" << histogramMultiple_Top[1] << endl;
 	cout << "-  x < 25%:" << histogramMultiple_Top[0] << endl;
 
 	cout << endl<< " * Diff first-second:"  << endl;
-	cout << "-  x > 75%:" << histogramMultiple_DifferenceSecond[0] << endl;
-	cout << "- 50% <= x < 75%:" << histogramMultiple_DifferenceSecond[1] << endl;
+	cout << "-  x > 75%:" << histogramMultiple_DifferenceSecond[3] << endl;
+	cout << "- 50% <= x < 75%:" << histogramMultiple_DifferenceSecond[2] << endl;
 	cout << "- 25% <= x < 50%:" << histogramMultiple_DifferenceSecond[1] << endl;
 	cout << "-  x < 25%:" << histogramMultiple_DifferenceSecond[0] << endl;
 
