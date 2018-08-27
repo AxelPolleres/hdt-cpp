@@ -303,7 +303,7 @@ int main(int argc, char **argv) {
 
 		if (allPercentages.size() > 1) {
 			countMultipleCases++;
-		} else {
+		} else if (allPercentages.size()==1) {
 			countUniqueCases++;
 			if (allPercentages[0].second < 0.25) {
 				histogramUnique[0]=histogramUnique[0]+1;
