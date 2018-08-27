@@ -26,7 +26,6 @@
 using namespace hdt;
 using namespace std;
 
-
 int thresholdNamespaces = 100; //disregard namespaces with less than 100 entities
 bool import = false;
 hdt::HDT *hdt_file1;
@@ -80,12 +79,9 @@ void help() {
 
 // Driver function to sort the vector elements
 // by second element of pairs
-bool sortbysec(const pair<string,double> &a,
-              const pair<string,double> &b)
-{
-    return (a.second > b.second);
+bool sortbysec(const pair<string, double> &a, const pair<string, double> &b) {
+	return (a.second > b.second);
 }
-
 
 int main(int argc, char **argv) {
 	int c;
@@ -174,7 +170,8 @@ int main(int argc, char **argv) {
 									+ nameFile.substr(0, nameFile.length() - 6);
 
 							// Import the range of domains from the input file. Second parameter is the number of shared items, but we don't really need it for this use case
-							Domains datasetDomain(nameFile, 0,thresholdNamespaces);
+							Domains datasetDomain(nameFile, 0,
+									thresholdNamespaces);
 
 							datasets[datasetName] = datasetDomain;
 							datasetsGroups[datasetName] = pair<unsigned int,
@@ -193,7 +190,7 @@ int main(int argc, char **argv) {
 						string nameFile(entry->d_name);
 						subparts = split(nameFile, '_');
 						string datasetName = subparts[1];
-						cout<< "Computing stats for "<<datasetName<<endl;
+						cout << "Computing stats for " << datasetName << endl;
 
 						ifstream inputFile(
 								result_analysis_Folder + "/" + entry->d_name);
@@ -226,7 +223,8 @@ int main(int argc, char **argv) {
 
 	map<string, Domains>::iterator it;
 
-	cout<<endl<<endl<<"Creating a set with all different domains..."<<endl;
+	cout << endl << endl << "Creating a set with all different domains..."
+			<< endl;
 	//first, create a set with all different domains
 	set<string> domains;
 	for (it = datasets.begin(); it != datasets.end(); it++) {
@@ -244,16 +242,36 @@ int main(int argc, char **argv) {
 				std::inserter(domains, domains.end()));
 	}
 	cout << "  - Domains size:" << domains.size() << endl;
-	cout<<endl<<endl<<"Iterating the set of different domains and compute the authoritative dataset(s)..."<<endl;
+	cout << endl << endl
+			<< "Iterating the set of different domains and compute the authoritative dataset(s)..."
+			<< endl;
 	// iterate the set of different domains and compute the authoritative dataset(s)
 	std::set<string>::iterator doms;
-	long numDoms=1;
+	long numDoms = 1;
 	cout << endl << "All counts of domains:" << endl;
 	// for each domain, iterate the dataset and compute the max
+
+	// For histograms
+	int countUniqueCases = 0;
+	int countMultipleCases = 0;
+
+	map<int, int> histogramUnique;
+	histogramUnique[0] = histogramUnique[1] = histogramUnique[2] =
+			histogramUnique[3] = 0;
+	map<int, int> histogramMultiple_Top;
+	histogramMultiple_Top[0] = histogramMultiple_Top[1] =
+			histogramMultiple_Top[2] = histogramMultiple_Top[3] = 0;
+
+	map<int, int> histogramMultiple_DifferenceSecond;
+	histogramMultiple_DifferenceSecond[0] =
+			histogramMultiple_DifferenceSecond[1] =
+					histogramMultiple_DifferenceSecond[2] =
+							histogramMultiple_DifferenceSecond[3] = 0;
+
 	for (doms = domains.begin(); doms != domains.end(); ++doms) {
 
-		if (numDoms%1000==0){
-			cout<< "   "<<numDoms<<" domains"<<endl;
+		if (numDoms % 1000 == 0) {
+			cout << "   " << numDoms << " domains" << endl;
 		}
 		numDoms++;
 		string currentDomain = *doms;
@@ -262,15 +280,15 @@ int main(int argc, char **argv) {
 		vector<string> maxDatasets;
 		// iterate all datasets
 		map<string, Domains>::iterator subit;
-	 // Declaring vector of pairs
-		vector< pair <string,double> > allPercentages; // store all percentages in case we want to print them
+		// Declaring vector of pairs
+		vector<pair<string, double> > allPercentages; // store all percentages in case we want to print them
 		for (subit = datasets.begin(); subit != datasets.end(); subit++) {
 			string dataset = subit->first;
 			Domains dom = subit->second;
 			//unsigned int occs = dom.getSubjectOccurrences(currentDomain);
 			double occs = dom.getTotalOccurrencesPercentage(currentDomain);
 			if (occs > 0) {
-				allPercentages.push_back(make_pair(dataset,occs)); // store all percentages
+				allPercentages.push_back(make_pair(dataset, occs)); // store all percentages
 				if (occs > maxOccurrence) {
 					maxDatasets.clear();
 					maxDatasets.push_back(dataset);
@@ -282,16 +300,88 @@ int main(int argc, char **argv) {
 		}
 		// sort by occurrence
 		sort(allPercentages.begin(), allPercentages.end(), sortbysec);
-		// print all occurrences
-		for (int i=0;i<allPercentages.size();i++){
-			cout << "    + dataset: " << allPercentages[i].first << " -> " << allPercentages[i].second<< " %  (sh:"<<datasets[allPercentages[i].first].getSubjectObjectsOccurrencesPercentage(currentDomain)<< " %; s:"<<datasets[allPercentages[i].first].getSubjectsOccurrencesPercentage(currentDomain)<< " %; o:"<<datasets[allPercentages[i].first].getObjectsOccurrencesPercentage(currentDomain)<<")"<<endl;
 
+		if (allPercentages.size() > 1) {
+			countMultipleCases++;
+		} else {
+			countUniqueCases++;
+			if (allPercentages[0].second < 0.25) {
+				histogramUnique[0]++;
+			} else if (allPercentages[0].second < 0.5) {
+				histogramUnique[1]++;
+			} else if (allPercentages[0].second < 0.75) {
+				histogramUnique[2]++;
+			} else {
+				histogramUnique[3]++;
+			}
+		}
+
+		// print all occurrences
+		for (int i = 0; i < allPercentages.size(); i++) {
+			cout << "    + dataset: " << allPercentages[i].first << " -> "
+					<< allPercentages[i].second << " %  (sh:"
+					<< datasets[allPercentages[i].first].getSubjectObjectsOccurrencesPercentage(
+							currentDomain) << " %; s:"
+					<< datasets[allPercentages[i].first].getSubjectsOccurrencesPercentage(
+							currentDomain) << " %; o:"
+					<< datasets[allPercentages[i].first].getObjectsOccurrencesPercentage(
+							currentDomain) << ")" << endl;
+
+			if (allPercentages.size() > 1) {
+				if (i == 0) {
+					if (allPercentages[0].second < 0.25) {
+						histogramMultiple_Top[0]++;
+					} else if (allPercentages[0].second < 0.5) {
+						histogramMultiple_Top[1]++;
+					} else if (allPercentages[0].second < 0.75) {
+						histogramMultiple_Top[2]++;
+					} else {
+						histogramMultiple_Top[3]++;
+					}
+				} else if (i == 1) {
+					if ((allPercentages[0].second - allPercentages[1].second)
+							< 0.25) {
+						histogramMultiple_DifferenceSecond[0]++;
+					} else if ((allPercentages[0].second
+							- allPercentages[1].second) < 0.5) {
+						histogramMultiple_DifferenceSecond[1]++;
+					} else if ((allPercentages[0].second
+							- allPercentages[1].second) < 0.75) {
+						histogramMultiple_DifferenceSecond[2]++;
+					} else {
+						histogramMultiple_DifferenceSecond[3]++;
+					}
+				}
+			}
 		}
 
 		// store the authoritative Dataset for the current domain
 		authoritativeDataset[currentDomain] = maxDatasets;
 
 	}
+
+	//Print the histograms
+	cout << endl << endl << endl << "Histograms:" << endl;
+	cout << endl << "Unique: " << countUniqueCases << endl;
+
+	cout << "-  x > 75%:" << histogramUnique[0] << endl;
+	cout << "- 50% <= x < 75%:" << histogramUnique[1] << endl;
+	cout << "- 25% <= x < 50%:" << histogramUnique[1] << endl;
+	cout << "-  x < 25%:" << histogramUnique[0] << endl;
+
+	cout << endl << "Multiple: " << countMultipleCases << endl;
+	cout << " * Top: " << countUniqueCases << endl;
+	cout << "-  x > 75%:" << histogramMultiple_Top[0] << endl;
+	cout << "- 50% <= x < 75%:" << histogramMultiple_Top[1] << endl;
+	cout << "- 25% <= x < 50%:" << histogramMultiple_Top[1] << endl;
+	cout << "-  x < 25%:" << histogramMultiple_Top[0] << endl;
+
+	cout << endl<< " * Diff first-second:"  << endl;
+	cout << "-  x > 75%:" << histogramMultiple_DifferenceSecond[0] << endl;
+	cout << "- 50% <= x < 75%:" << histogramMultiple_DifferenceSecond[1] << endl;
+	cout << "- 25% <= x < 50%:" << histogramMultiple_DifferenceSecond[1] << endl;
+	cout << "-  x < 25%:" << histogramMultiple_DifferenceSecond[0] << endl;
+
 
 	// print authoritative domains
 	cout << endl << endl << endl << "Authoritative domains:" << endl;
@@ -310,9 +400,11 @@ int main(int argc, char **argv) {
 	// 1.- replace the source/target with the dataset that is authoritative
 	// 2.- only consider those links where the subject or object is Authoritative of the current dataset
 
-	cout<<endl<<endl<<"Iterating the domains in datasetConnections with the domain links per dataset..."<<endl;
+	cout << endl << endl
+			<< "Iterating the domains in datasetConnections with the domain links per dataset..."
+			<< endl;
 	vector<DomainConnectionID> finalLinks;
-	map<unsigned int,unsigned int> sizeDomains; //size of each domain
+	map<unsigned int, unsigned int> sizeDomains; //size of each domain
 	map<string, vector<DomainConnection>>::iterator linksIt;
 	for (linksIt = datasetConnections.begin();
 			linksIt != datasetConnections.end(); linksIt++) {
@@ -345,7 +437,9 @@ int main(int argc, char **argv) {
 								conID.sourceID = pairIdsSource.first;
 								conID.targetID = pairIdsTarget.first;
 								conID.numLinks = con[n].numLinks;
-								sizeDomains[pairIdsSource.first]=sizeDomains[pairIdsSource.first]+conID.numLinks;
+								sizeDomains[pairIdsSource.first] =
+										sizeDomains[pairIdsSource.first]
+												+ conID.numLinks;
 
 								//add to final results
 								finalLinks.push_back(conID);
@@ -364,13 +458,13 @@ int main(int argc, char **argv) {
 		exportFile << "{" << endl;
 		exportFile << "  \"links\" : [" << endl;
 
-		for (int i = 0; i < finalLinks.size(); i++) {  // -1 because nodes should start in 0
+		for (int i = 0; i < finalLinks.size(); i++) { // -1 because nodes should start in 0
 			exportFile << "   {" << endl;
-			exportFile << "    \"source\" : " << (finalLinks[i].sourceID-1) << ","
-					<< endl;
-			exportFile << "    \"target\" : " << (finalLinks[i].targetID-1) << ","
-					<< endl;
-			exportFile << "    \"size\" : " << finalLinks[i].numLinks<< endl;
+			exportFile << "    \"source\" : " << (finalLinks[i].sourceID - 1)
+					<< "," << endl;
+			exportFile << "    \"target\" : " << (finalLinks[i].targetID - 1)
+					<< "," << endl;
+			exportFile << "    \"size\" : " << finalLinks[i].numLinks << endl;
 			if ((i + 1) < finalLinks.size()) {
 				exportFile << "   }," << endl;
 			} else
@@ -387,7 +481,7 @@ int main(int argc, char **argv) {
 
 			exportFile << "   {" << endl;
 			exportFile << "    \"name\" : \"" << datsIt->first << "\"," << endl;
-			exportFile << "    \"group\" : " << datsIt->second.second<<","
+			exportFile << "    \"group\" : " << datsIt->second.second << ","
 					<< endl;
 			unsigned int sizedom = sizeDomains[datsIt->second.first];
 			exportFile << "    \"size\" : " << sizedom << endl;
