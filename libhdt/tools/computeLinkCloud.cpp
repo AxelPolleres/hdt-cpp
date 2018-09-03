@@ -13,10 +13,14 @@
 #include <iostream>
 #include <fstream>
 
+#include <algorithm>
+#include <string>
+
 #include "../src/util/StopWatch.hpp"
 #include "../src/triples/TripleIterators.hpp"
 #include "../src/triples/BitmapTriples.hpp"
 #include "../src/util/Domains.hpp"
+#include "../src/util/terms.hpp"
 
 #include <algorithm>    // std::find
 #include <vector>
@@ -26,11 +30,18 @@
 using namespace hdt;
 using namespace std;
 
+#include <unordered_set>
+
 int thresholdNamespaces = 100; //disregard namespaces with less than 100 entities
 bool import = false;
 hdt::HDT *hdt_file1;
 char delim = ' ';
 bool verbose = false;
+string literalDomain = "LITERAL";
+string otherIRI = "OTHER-IRI"; // non http or https IRI (for option PLD)
+string bnode = "BNODE";
+
+unordered_set<std::string> plds;
 
 struct DomainConnection {
 	string source;
@@ -83,19 +94,100 @@ bool sortbysec(const pair<string, double> &a, const pair<string, double> &b) {
 	return (a.second > b.second);
 }
 
+string trim(string str) {
+	// trim trailing spaces
+	size_t endpos = str.find_last_not_of(" \t");
+	size_t startpos = str.find_first_not_of(" \t");
+	if (std::string::npos != endpos) {
+		str = str.substr(0, endpos + 1);
+		str = str.substr(startpos);
+	} else {
+		str.erase(std::remove(str.begin(), str.end(), ' '), str.end());
+	}
+
+	// trim leading spaces
+	startpos = str.find_first_not_of(" \t");
+	if (string::npos != startpos) {
+		str = str.substr(startpos);
+	}
+	return str;
+}
+void readPLDs(string filename) {
+	ifstream inputFile(filename);
+	string line = "";
+
+	while (getline(inputFile, line)) {
+		if (line[0] != '/') {
+			line = trim(line);
+			if (line.length() > 0) {
+				//cout<<"line:"<<line<<";"<<endl;
+				plds.insert(line);
+			}
+		}
+
+	}
+}
+
+pair<string, string> splitPLD(string URI) {
+	string currenthostname = string(
+			process_term_hostname((char*) literalDomain.c_str(),
+					(char*) bnode.c_str(), (char*) otherIRI.c_str(),
+					(char*) URI.c_str()));
+	cout << "currenthostname:" << currenthostname << endl;
+	string host = currenthostname;
+	size_t pos = host.length();
+	string extension, potentialExtension;
+	bool processNextSubdomain = true;
+	while (processNextSubdomain) {
+		pos = currenthostname.find_last_of('.', pos - 1);
+		if (pos != string::npos) {
+			potentialExtension = currenthostname.substr(pos + 1);
+			cout << "potential extension is:" << potentialExtension << endl;
+
+			if (plds.find(potentialExtension) != plds.end()) {
+				// found
+				host = currenthostname.substr(0, pos);
+				cout << "new host is:" << host << endl;
+				extension = potentialExtension;
+				cout << "new extension is:" << extension << endl;
+			} else {
+				// end as we won't find a longer domain if the short is not found
+				processNextSubdomain = false;
+			}
+		} else {
+			// not more '.' delimiters
+			processNextSubdomain = false;
+		}
+	}
+	// now get the domain before the pld
+	pos = host.find_last_of('.');
+	if (pos != string::npos) {
+		host = host.substr(pos + 1);
+	}
+	cout << "final host is:" << host << endl;
+	cout << "final extension is:" << extension << endl;
+
+	return pair<string, string>(host, extension);
+}
+
 int main(int argc, char **argv) {
 	int c;
 	string inputFile;
 	string importDirectoriesString, exportFileString;
+	string datasetURL = "";
+	//so far we only allow one datasetURL for the full folder.
+	//todo store potnetial different dataset URLs per file
+	string PLDFile = "";
+	bool use_PLDs = false;
 	string testString, rolString;
 	bool exports = false;
 	//bool removeLiteral = false; //remove the LITERAL output in the export
-	string literalDomain = "LITERAL";
+
 	bool minLinks = true;
 	int numMinLinks = 50;
 	bool printPercentage = true;
 
-	while ((c = getopt(argc, argv, "hd:ve:m:")) != -1) {
+	while ((c = getopt(argc, argv, "hd:ve:m:p:u:")) != -1) {
 		switch (c) {
 		case 'h':
 			help();
@@ -117,6 +209,13 @@ int main(int argc, char **argv) {
 			/*	case 'f':
 			 printPercentage = false;
 			 break;*/
+		case 'p':
+			PLDFile = optarg;
+			use_PLDs = true;
+			break;
+		case 'u':
+			datasetURL = optarg;
+			break;
 		case 'v':
 			verbose = true;
 			break;
@@ -126,7 +225,13 @@ int main(int argc, char **argv) {
 			return 1;
 		}
 	}
-
+	pair<string, string> dataset_host_pld;
+	if (datasetURL != "") {
+		dataset_host_pld = splitPLD(datasetURL);
+	}
+	if (use_PLDs) {
+		readPLDs(PLDFile);
+	}
 	vector<string> groups; //storing the different groups
 	map<string, Domains> datasets; // a map with the name of the dataset and its range of domains
 	map<string, pair<unsigned int, unsigned int>> datasetsGroups; // a map with the name of the dataset and a pair with its ID and the group
@@ -253,11 +358,15 @@ int main(int argc, char **argv) {
 
 	// For histograms
 	int countUniqueCases = 0;
+	int countUniqueCases_samePLD = 0;
 	int countMultipleCases = 0;
 
 	map<int, int> histogramUnique;
 	histogramUnique[0] = histogramUnique[1] = histogramUnique[2] =
 			histogramUnique[3] = 0;
+	map<int, int> histogramUnique_samePLD;
+	histogramUnique_samePLD[0] = histogramUnique_samePLD[1] =
+			histogramUnique_samePLD[2] = histogramUnique_samePLD[3] = 0;
 	map<int, int> histogramMultiple_Top;
 	histogramMultiple_Top[0] = histogramMultiple_Top[1] =
 			histogramMultiple_Top[2] = histogramMultiple_Top[3] = 0;
@@ -276,6 +385,22 @@ int main(int argc, char **argv) {
 		numDoms++;
 		string currentDomain = *doms;
 		cout << endl << " - Domain: " << currentDomain << endl;
+
+		pair<string, string> currentDomain_host_PLD;
+		bool samehost = false; // for PLDs
+		if (use_PLDs) {
+			// get PLD and host name
+			currentDomain_host_PLD = splitPLD(currentDomain);
+
+			// try to search similarities between currentDomain and dataset URL
+			if ((currentDomain_host_PLD.first == dataset_host_pld.first)
+					&& (currentDomain_host_PLD.second == dataset_host_pld.second)) {
+				// if the extensions are the same and the host is the same (we then obviate subdomain)
+				samehost = true;
+			}
+
+		}
+
 		double maxOccurrence = 0;
 		vector<string> maxDatasets;
 		// iterate all datasets
@@ -303,16 +428,31 @@ int main(int argc, char **argv) {
 
 		if (allPercentages.size() > 1) {
 			countMultipleCases++;
-		} else if (allPercentages.size()==1) {
+		} else if (allPercentages.size() == 1) {
 			countUniqueCases++;
+			if (samehost) {
+				countUniqueCases_samePLD++;
+			}
 			if (allPercentages[0].second < 25) {
-				histogramUnique[0]=histogramUnique[0]+1;
+				histogramUnique[0] = histogramUnique[0] + 1;
+				if (samehost) {
+					histogramUnique_samePLD[0] = histogramUnique_samePLD[0] + 1;
+				}
 			} else if (allPercentages[0].second < 50) {
-				histogramUnique[1]=histogramUnique[1]+1;
+				histogramUnique[1] = histogramUnique[1] + 1;
+				if (samehost) {
+					histogramUnique_samePLD[1] = histogramUnique_samePLD[1] + 1;
+				}
 			} else if (allPercentages[0].second < 75) {
-				histogramUnique[2]=histogramUnique[2]+1;
+				histogramUnique[2] = histogramUnique[2] + 1;
+				if (samehost) {
+					histogramUnique_samePLD[2] = histogramUnique_samePLD[2] + 1;
+				}
 			} else {
-				histogramUnique[3]=histogramUnique[3]+1;
+				histogramUnique[3] = histogramUnique[3] + 1;
+				if (samehost) {
+					histogramUnique_samePLD[3] = histogramUnique_samePLD[3] + 1;
+				}
 			}
 		}
 
@@ -330,26 +470,33 @@ int main(int argc, char **argv) {
 			if (allPercentages.size() > 1) {
 				if (i == 0) {
 					if (allPercentages[0].second < 25) {
-						histogramMultiple_Top[0]=histogramMultiple_Top[0]+1;
+						histogramMultiple_Top[0] = histogramMultiple_Top[0] + 1;
 					} else if (allPercentages[0].second < 50) {
-						histogramMultiple_Top[1]=histogramMultiple_Top[1]+1;;
+						histogramMultiple_Top[1] = histogramMultiple_Top[1] + 1;
+						;
 					} else if (allPercentages[0].second < 75) {
-						histogramMultiple_Top[2]=histogramMultiple_Top[2]+1;;
+						histogramMultiple_Top[2] = histogramMultiple_Top[2] + 1;
+						;
 					} else {
-						histogramMultiple_Top[3]=histogramMultiple_Top[3]+1;;
+						histogramMultiple_Top[3] = histogramMultiple_Top[3] + 1;
+						;
 					}
 				} else if (i == 1) {
 					if ((allPercentages[0].second - allPercentages[1].second)
 							< 25) {
-						histogramMultiple_DifferenceSecond[0]=histogramMultiple_DifferenceSecond[0]+1;
+						histogramMultiple_DifferenceSecond[0] =
+								histogramMultiple_DifferenceSecond[0] + 1;
 					} else if ((allPercentages[0].second
 							- allPercentages[1].second) < 50) {
-						histogramMultiple_DifferenceSecond[1]=histogramMultiple_DifferenceSecond[1]+1;
+						histogramMultiple_DifferenceSecond[1] =
+								histogramMultiple_DifferenceSecond[1] + 1;
 					} else if ((allPercentages[0].second
 							- allPercentages[1].second) < 75) {
-						histogramMultiple_DifferenceSecond[2]=histogramMultiple_DifferenceSecond[2]+1;
+						histogramMultiple_DifferenceSecond[2] =
+								histogramMultiple_DifferenceSecond[2] + 1;
 					} else {
-						histogramMultiple_DifferenceSecond[3]=histogramMultiple_DifferenceSecond[3]+1;
+						histogramMultiple_DifferenceSecond[3] =
+								histogramMultiple_DifferenceSecond[3] + 1;
 					}
 				}
 			}
@@ -370,18 +517,29 @@ int main(int argc, char **argv) {
 	cout << "-  x < 25%:" << histogramUnique[0] << endl;
 
 	cout << endl << "Multiple: " << countMultipleCases << endl;
-	cout << " * Top: " <<  endl;
+	cout << " * Top: " << endl;
 	cout << "-  x > 75%:" << histogramMultiple_Top[3] << endl;
 	cout << "- 50% <= x < 75%:" << histogramMultiple_Top[2] << endl;
 	cout << "- 25% <= x < 50%:" << histogramMultiple_Top[1] << endl;
 	cout << "-  x < 25%:" << histogramMultiple_Top[0] << endl;
 
-	cout << endl<< " * Diff first-second:"  << endl;
+	cout << endl << " * Diff first-second:" << endl;
 	cout << "-  x > 75%:" << histogramMultiple_DifferenceSecond[3] << endl;
-	cout << "- 50% <= x < 75%:" << histogramMultiple_DifferenceSecond[2] << endl;
-	cout << "- 25% <= x < 50%:" << histogramMultiple_DifferenceSecond[1] << endl;
+	cout << "- 50% <= x < 75%:" << histogramMultiple_DifferenceSecond[2]
+			<< endl;
+	cout << "- 25% <= x < 50%:" << histogramMultiple_DifferenceSecond[1]
+			<< endl;
 	cout << "-  x < 25%:" << histogramMultiple_DifferenceSecond[0] << endl;
 
+
+	if (use_PLDs){
+		cout << endl << "Unique with PLDs: " << countUniqueCases_samePLD << endl;
+
+			cout << "-  x > 75%:" << histogramUnique_samePLD[3] << endl;
+			cout << "- 50% <= x < 75%:" << histogramUnique_samePLD[2] << endl;
+			cout << "- 25% <= x < 50%:" << histogramUnique_samePLD[1] << endl;
+			cout << "-  x < 25%:" << histogramUnique_samePLD[0] << endl;
+	}
 
 	// print authoritative domains
 	cout << endl << endl << endl << "Authoritative domains:" << endl;
