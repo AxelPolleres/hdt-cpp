@@ -305,11 +305,11 @@ int main(int argc, char **argv) {
 			countMultipleCases++;
 		} else if (allPercentages.size()==1) {
 			countUniqueCases++;
-			if (allPercentages[0].second < 0.25) {
+			if (allPercentages[0].second < 25) {
 				histogramUnique[0]=histogramUnique[0]+1;
-			} else if (allPercentages[0].second < 0.5) {
+			} else if (allPercentages[0].second < 50) {
 				histogramUnique[1]=histogramUnique[1]+1;
-			} else if (allPercentages[0].second < 0.75) {
+			} else if (allPercentages[0].second < 75) {
 				histogramUnique[2]=histogramUnique[2]+1;
 			} else {
 				histogramUnique[3]=histogramUnique[3]+1;
@@ -329,24 +329,24 @@ int main(int argc, char **argv) {
 
 			if (allPercentages.size() > 1) {
 				if (i == 0) {
-					if (allPercentages[0].second < 0.25) {
+					if (allPercentages[0].second < 25) {
 						histogramMultiple_Top[0]=histogramMultiple_Top[0]+1;
-					} else if (allPercentages[0].second < 0.5) {
+					} else if (allPercentages[0].second < 50) {
 						histogramMultiple_Top[1]=histogramMultiple_Top[1]+1;;
-					} else if (allPercentages[0].second < 0.75) {
+					} else if (allPercentages[0].second < 75) {
 						histogramMultiple_Top[2]=histogramMultiple_Top[2]+1;;
 					} else {
 						histogramMultiple_Top[3]=histogramMultiple_Top[3]+1;;
 					}
 				} else if (i == 1) {
 					if ((allPercentages[0].second - allPercentages[1].second)
-							< 0.25) {
+							< 25) {
 						histogramMultiple_DifferenceSecond[0]=histogramMultiple_DifferenceSecond[0]+1;
 					} else if ((allPercentages[0].second
-							- allPercentages[1].second) < 0.5) {
+							- allPercentages[1].second) < 50) {
 						histogramMultiple_DifferenceSecond[1]=histogramMultiple_DifferenceSecond[1]+1;
 					} else if ((allPercentages[0].second
-							- allPercentages[1].second) < 0.75) {
+							- allPercentages[1].second) < 75) {
 						histogramMultiple_DifferenceSecond[2]=histogramMultiple_DifferenceSecond[2]+1;
 					} else {
 						histogramMultiple_DifferenceSecond[3]=histogramMultiple_DifferenceSecond[3]+1;
