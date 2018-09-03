@@ -137,7 +137,7 @@ pair<string, string> splitPLD(string URI) {
 			process_term_hostname((char*) literalDomain.c_str(),
 					(char*) bnode.c_str(), (char*) otherIRI.c_str(),
 					(char*) URI.c_str()));
-	cout << "currenthostname:" << currenthostname << endl;
+
 	string host = currenthostname;
 	size_t pos = host.length();
 	string extension, potentialExtension;
@@ -146,15 +146,10 @@ pair<string, string> splitPLD(string URI) {
 		pos = currenthostname.find_last_of('.', pos - 1);
 		if (pos != string::npos) {
 			potentialExtension = currenthostname.substr(pos + 1);
-			cout << "potential extension is:" << potentialExtension << ";"
-					<< endl;
-
 			if (plds.find(potentialExtension) != plds.end()) {
 				// found
 				host = currenthostname.substr(0, pos);
-				cout << "new host is:" << host << endl;
 				extension = potentialExtension;
-				cout << "new extension is:" << extension << endl;
 			} else {
 				// end as we won't find a longer domain if the short is not found
 				processNextSubdomain = false;
@@ -169,8 +164,8 @@ pair<string, string> splitPLD(string URI) {
 	if (pos != string::npos) {
 		host = host.substr(pos + 1);
 	}
-	cout << "final host is:" << host << endl;
-	cout << "final extension is:" << extension << endl;
+	//cout << "final host is:" << host << endl;
+	//cout << "final extension is:" << extension << endl;
 
 	return pair<string, string>(host, extension);
 }
