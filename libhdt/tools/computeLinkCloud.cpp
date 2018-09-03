@@ -400,6 +400,7 @@ int main(int argc, char **argv) {
 							histogramMultiple_DifferenceSecond[3] = 0;
 
 	int countContainDatasetName_Unique = 0;
+	int countContainDatasetName_TopPosition = 0;
 	int countContainDatasetName_notTopPosition = 0;
 	for (doms = domains.begin(); doms != domains.end(); ++doms) {
 
@@ -528,6 +529,7 @@ int main(int argc, char **argv) {
 							allPercentages[i].first.end(), lower_test);
 					if (fpos != currentDomain.end()) {
 						contains = true;
+						countContainDatasetName_TopPosition++;
 					}
 
 					if (allPercentages[0].second < 25) {
@@ -640,7 +642,7 @@ int main(int argc, char **argv) {
 
 
 	cout << endl << "Top dataset in Multiple options, where dataset contains domain name: "
-				<< histogramMultiple_Top_containDatasetName.size() << endl;
+				<< countContainDatasetName_TopPosition << endl;
 
 		cout << "-  x > 75%:" << histogramMultiple_Top_containDatasetName[3] << endl;
 		cout << "- 50% <= x < 75%:" << histogramMultiple_Top_containDatasetName[2]
