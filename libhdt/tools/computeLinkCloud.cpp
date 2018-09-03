@@ -94,6 +94,10 @@ bool sortbysec(const pair<string, double> &a, const pair<string, double> &b) {
 	return (a.second > b.second);
 }
 
+bool lower_test(char l, char r) {
+	return (std::tolower(l) == std::tolower(r));
+}
+
 string trim(string str) {
 	// trim trailing spaces
 	size_t endpos = str.find_last_not_of(" \t");
@@ -142,7 +146,8 @@ pair<string, string> splitPLD(string URI) {
 		pos = currenthostname.find_last_of('.', pos - 1);
 		if (pos != string::npos) {
 			potentialExtension = currenthostname.substr(pos + 1);
-			cout << "potential extension is:" << potentialExtension << ";"<<endl;
+			cout << "potential extension is:" << potentialExtension << ";"
+					<< endl;
 
 			if (plds.find(potentialExtension) != plds.end()) {
 				// found
@@ -366,12 +371,27 @@ int main(int argc, char **argv) {
 	map<int, int> histogramUnique;
 	histogramUnique[0] = histogramUnique[1] = histogramUnique[2] =
 			histogramUnique[3] = 0;
+
 	map<int, int> histogramUnique_samePLD;
 	histogramUnique_samePLD[0] = histogramUnique_samePLD[1] =
 			histogramUnique_samePLD[2] = histogramUnique_samePLD[3] = 0;
+
+	map<int, int> histogramUnique_containDatasetName;
+	histogramUnique_containDatasetName[0] =
+			histogramUnique_containDatasetName[1] =
+					histogramUnique_containDatasetName[2] =
+							histogramUnique_containDatasetName[3] = 0;
+
 	map<int, int> histogramMultiple_Top;
 	histogramMultiple_Top[0] = histogramMultiple_Top[1] =
 			histogramMultiple_Top[2] = histogramMultiple_Top[3] = 0;
+
+	map<int, int> histogramMultiple_Top_containDatasetName;
+	histogramMultiple_Top_containDatasetName[0] =
+			histogramMultiple_Top_containDatasetName[1] =
+					histogramMultiple_Top_containDatasetName[2] =
+							histogramMultiple_Top_containDatasetName[3] = 0;
+
 
 	map<int, int> histogramMultiple_DifferenceSecond;
 	histogramMultiple_DifferenceSecond[0] =
@@ -379,6 +399,8 @@ int main(int argc, char **argv) {
 					histogramMultiple_DifferenceSecond[2] =
 							histogramMultiple_DifferenceSecond[3] = 0;
 
+	int countContainDatasetName_Unique = 0;
+	int countContainDatasetName_notTopPosition = 0;
 	for (doms = domains.begin(); doms != domains.end(); ++doms) {
 
 		if (numDoms % 1000 == 0) {
@@ -435,25 +457,51 @@ int main(int argc, char **argv) {
 			if (samehost) {
 				countUniqueCases_samePLD++;
 			}
+			bool contains = false;
+			//search if the dataset name is contained in the domain
+			std::string::iterator fpos = std::search(currentDomain.begin(),
+					currentDomain.end(), allPercentages[0].first.begin(),
+					allPercentages[0].first.end(), lower_test);
+			if (fpos != currentDomain.end()) {
+				contains = true;
+				countContainDatasetName_Unique++;
+			}
+
 			if (allPercentages[0].second < 25) {
 				histogramUnique[0] = histogramUnique[0] + 1;
 				if (samehost) {
 					histogramUnique_samePLD[0] = histogramUnique_samePLD[0] + 1;
+				}
+				if (contains) {
+					histogramUnique_containDatasetName[0] =
+							histogramUnique_containDatasetName[0] + 1;
 				}
 			} else if (allPercentages[0].second < 50) {
 				histogramUnique[1] = histogramUnique[1] + 1;
 				if (samehost) {
 					histogramUnique_samePLD[1] = histogramUnique_samePLD[1] + 1;
 				}
+				if (contains) {
+					histogramUnique_containDatasetName[1] =
+							histogramUnique_containDatasetName[1] + 1;
+				}
 			} else if (allPercentages[0].second < 75) {
 				histogramUnique[2] = histogramUnique[2] + 1;
 				if (samehost) {
 					histogramUnique_samePLD[2] = histogramUnique_samePLD[2] + 1;
 				}
+				if (contains) {
+					histogramUnique_containDatasetName[2] =
+							histogramUnique_containDatasetName[2] + 1;
+				}
 			} else {
 				histogramUnique[3] = histogramUnique[3] + 1;
 				if (samehost) {
 					histogramUnique_samePLD[3] = histogramUnique_samePLD[3] + 1;
+				}
+				if (contains) {
+					histogramUnique_containDatasetName[3] =
+							histogramUnique_containDatasetName[3] + 1;
 				}
 			}
 		}
@@ -471,17 +519,45 @@ int main(int argc, char **argv) {
 
 			if (allPercentages.size() > 1) {
 				if (i == 0) {
+
+					bool contains = false;
+					//search if the dataset name is contained in the domain
+					std::string::iterator fpos = std::search(
+							currentDomain.begin(), currentDomain.end(),
+							allPercentages[i].first.begin(),
+							allPercentages[i].first.end(), lower_test);
+					if (fpos != currentDomain.end()) {
+						contains = true;
+					}
+
 					if (allPercentages[0].second < 25) {
 						histogramMultiple_Top[0] = histogramMultiple_Top[0] + 1;
+						if (contains) {
+							histogramMultiple_Top_containDatasetName[0] =
+									histogramMultiple_Top_containDatasetName[0]
+											+ 1;
+						}
 					} else if (allPercentages[0].second < 50) {
 						histogramMultiple_Top[1] = histogramMultiple_Top[1] + 1;
-						;
+						if (contains) {
+							histogramMultiple_Top_containDatasetName[1] =
+									histogramMultiple_Top_containDatasetName[1]
+											+ 1;
+						}
 					} else if (allPercentages[0].second < 75) {
 						histogramMultiple_Top[2] = histogramMultiple_Top[2] + 1;
-						;
+						if (contains) {
+							histogramMultiple_Top_containDatasetName[2] =
+									histogramMultiple_Top_containDatasetName[2]
+											+ 1;
+						}
 					} else {
 						histogramMultiple_Top[3] = histogramMultiple_Top[3] + 1;
-						;
+						if (contains) {
+							histogramMultiple_Top_containDatasetName[3] =
+									histogramMultiple_Top_containDatasetName[3]
+											+ 1;
+						}
 					}
 				} else if (i == 1) {
 					if ((allPercentages[0].second - allPercentages[1].second)
@@ -500,6 +576,15 @@ int main(int argc, char **argv) {
 						histogramMultiple_DifferenceSecond[3] =
 								histogramMultiple_DifferenceSecond[3] + 1;
 					}
+
+					std::string::iterator fpos = std::search(
+							currentDomain.begin(), currentDomain.end(),
+							allPercentages[i].first.begin(),
+							allPercentages[i].first.end(), lower_test);
+					if (fpos != currentDomain.end()) {
+						countContainDatasetName_notTopPosition++;
+					}
+
 				}
 			}
 		}
@@ -533,16 +618,39 @@ int main(int argc, char **argv) {
 			<< endl;
 	cout << "-  x < 25%:" << histogramMultiple_DifferenceSecond[0] << endl;
 
+	if (use_PLDs) {
+		cout << endl << "Unique with PLDs: " << countUniqueCases_samePLD
+				<< endl;
 
-	if (use_PLDs){
-		cout << endl << "Unique with PLDs: " << countUniqueCases_samePLD << endl;
-
-			cout << "-  x > 75%:" << histogramUnique_samePLD[3] << endl;
-			cout << "- 50% <= x < 75%:" << histogramUnique_samePLD[2] << endl;
-			cout << "- 25% <= x < 50%:" << histogramUnique_samePLD[1] << endl;
-			cout << "-  x < 25%:" << histogramUnique_samePLD[0] << endl;
+		cout << "-  x > 75%:" << histogramUnique_samePLD[3] << endl;
+		cout << "- 50% <= x < 75%:" << histogramUnique_samePLD[2] << endl;
+		cout << "- 25% <= x < 50%:" << histogramUnique_samePLD[1] << endl;
+		cout << "-  x < 25%:" << histogramUnique_samePLD[0] << endl;
 	}
 
+	cout << endl << "Unique where dataset contains domain name: "
+			<< countContainDatasetName_Unique << endl;
+
+	cout << "-  x > 75%:" << histogramUnique_containDatasetName[3] << endl;
+	cout << "- 50% <= x < 75%:" << histogramUnique_containDatasetName[2]
+			<< endl;
+	cout << "- 25% <= x < 50%:" << histogramUnique_containDatasetName[1]
+			<< endl;
+	cout << "-  x < 25%:" << histogramUnique_containDatasetName[0] << endl;
+
+
+	cout << endl << "Top dataset in Multiple options, where dataset contains domain name: "
+				<< histogramMultiple_Top_containDatasetName.size() << endl;
+
+		cout << "-  x > 75%:" << histogramMultiple_Top_containDatasetName[3] << endl;
+		cout << "- 50% <= x < 75%:" << histogramMultiple_Top_containDatasetName[2]
+				<< endl;
+		cout << "- 25% <= x < 50%:" << histogramMultiple_Top_containDatasetName[1]
+				<< endl;
+		cout << "-  x < 25%:" << histogramMultiple_Top_containDatasetName[0] << endl;
+
+
+	cout<<endl<<"There are '"<<countContainDatasetName_notTopPosition<< "' datasets not in the top position that contain the domain name"<<endl;
 	// print authoritative domains
 	cout << endl << endl << endl << "Authoritative domains:" << endl;
 	map<string, vector<string>>::iterator auth;
