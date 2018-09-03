@@ -370,7 +370,7 @@ int main(int argc, char **argv) {
 	cout << "-  x < 25%:" << histogramUnique[0] << endl;
 
 	cout << endl << "Multiple: " << countMultipleCases << endl;
-	cout << " * Top: " << countUniqueCases << endl;
+	cout << " * Top: " <<  endl;
 	cout << "-  x > 75%:" << histogramMultiple_Top[3] << endl;
 	cout << "- 50% <= x < 75%:" << histogramMultiple_Top[2] << endl;
 	cout << "- 25% <= x < 50%:" << histogramMultiple_Top[1] << endl;

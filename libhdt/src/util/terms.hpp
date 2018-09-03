@@ -20,7 +20,7 @@ char* process_term_preffix_qname(char literal[], char bnode[], bool pref,char* t
 	char* ph = 0; // position of last hash
 	char* ps = 0; // position of last slash
 	char* pc = 0; // position of last colon
-	char* pu = 0; // position of last underline '_'
+	//char* pu = 0; // position of last underline '_'
 	char* p = 0; // position of namespace separator
 	// find Prefix-Qnames separator:
 	// ignore literals or weird identifiers for qname or prefix search.!
@@ -43,11 +43,12 @@ char* process_term_preffix_qname(char literal[], char bnode[], bool pref,char* t
 		ps = strrchr(pscheme, '/');
 		ph = strrchr(pscheme, '#');
 		pc = strrchr(pscheme, ':');
-		pu = strrchr(pscheme, '_'); //added as a test
-		if (ph || pc || ps || pu) {
+		//pu = strrchr(pscheme, '_'); //added as a test
+		//if (ph || pc || ps || pu) {
+		if (ph || pc || ps ) {
 			p = (pc > ph) ? pc : ph; // set p to the max of ph,pc,ps
 			p = (ps > p) ? ps : p;
-			p = (pu > p) ? pu : p;
+			//p = (pu > p) ? pu : p;
 			if (pref) { // print prefix only
 				//TODO: Is that evil? i.e. does it cause memory troubles to simply overwrite a character in the middle with 0?
 				*(p + 1) = 0;
