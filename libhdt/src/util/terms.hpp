@@ -46,9 +46,12 @@ char* process_term_preffix_qname(char literal[], char bnode[], bool pref,char* t
 		//pu = strrchr(pscheme, '_'); //added as a test
 		//if (ph || pc || ps || pu) {
 		if (ph || pc || ps ) {
-			p = (pc > ph) ? pc : ph; // set p to the max of ph,pc,ps
-			p = (ps > p) ? ps : p;
-			//p = (pu > p) ? pu : p;
+			if (ph||pc){
+				p = (pc > ph) ? pc : ph; // set p to the max of ph,pc,ps
+		
+			} else if (ps){
+				p = ps;
+			}
 			if (pref) { // print prefix only
 				//TODO: Is that evil? i.e. does it cause memory troubles to simply overwrite a character in the middle with 0?
 				*(p + 1) = 0;
