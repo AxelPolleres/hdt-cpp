@@ -142,7 +142,7 @@ pair<string, string> splitPLD(string URI) {
 		pos = currenthostname.find_last_of('.', pos - 1);
 		if (pos != string::npos) {
 			potentialExtension = currenthostname.substr(pos + 1);
-			cout << "potential extension is:" << potentialExtension << endl;
+			cout << "potential extension is:" << potentialExtension << ";"<<endl;
 
 			if (plds.find(potentialExtension) != plds.end()) {
 				// found
@@ -225,12 +225,14 @@ int main(int argc, char **argv) {
 			return 1;
 		}
 	}
+
+	if (use_PLDs) {
+		readPLDs(PLDFile);
+	}
+
 	pair<string, string> dataset_host_pld;
 	if (datasetURL != "") {
 		dataset_host_pld = splitPLD(datasetURL);
-	}
-	if (use_PLDs) {
-		readPLDs(PLDFile);
 	}
 	vector<string> groups; //storing the different groups
 	map<string, Domains> datasets; // a map with the name of the dataset and its range of domains
