@@ -76,7 +76,7 @@ private:
 					istringstream(parts[1]) >> start;
 					istringstream(parts[2]) >> end;
 
-					if (end - start > thresholdNamespaces) { //only useful for the computation of the lod cloud
+					if ((end - start +1)  > thresholdNamespaces) { //only useful for the computation of the lod cloud
 						if (numLine != 1) {
 							if ((prevEnd + 1) != start) {
 								throw std::runtime_error(
@@ -158,7 +158,7 @@ private:
 							}
 
 						}
-					} else {
+					} else { // count the terms with occurrence < threshold
 						if (parts[0] == literalDomain) {
 							totalLiterals = end - start + 1;
 							cout << "literals:" << totalLiterals;
