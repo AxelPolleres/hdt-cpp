@@ -65,6 +65,15 @@ void print_CSV_header(ofstream& exportFile){
 	exportFile<<"<Term>"<<delim<<"<Initial ID>"<<delim<<"<End ID> \n";
 }
 
+void removeSpace(char* s)
+{
+    for (char* s2 = s; *s2; ++s2) {
+        if (*s2 != ' ')
+            *s++ = *s2;
+    }
+    *s = 0;
+}
+
 void parse_terms_iterator(ofstream& exportFile, int startID,
 		IteratorUCharString* itSol) {
 	char* previous = 0;
@@ -73,6 +82,7 @@ void parse_terms_iterator(ofstream& exportFile, int startID,
 	unsigned long int cnt = 0;
 	while (itSol->hasNext()) {
 		current = reinterpret_cast<char*>(itSol->next());
+		removeSpace(current); // make sure there are no spaces in preffixes in order to write the output file
 		if (pref || qnames) {
 			current = process_term_preffix_qname(literal, bnode, pref, current);
 		} else if (pld) {
