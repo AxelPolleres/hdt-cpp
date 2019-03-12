@@ -666,7 +666,7 @@ int main(int argc, char **argv) {
 
 	ofstream exportFileCSVAuth;
 	if (exportCSVAuthoritative)
-		exportFileCSVAuth.open(exportFileString.c_str());
+		exportFileCSVAuth.open(exportCSVAuthoritativeFile.c_str());
 	for (auth = authoritativeDataset.begin();
 			auth != authoritativeDataset.end(); auth++) {
 		string domain = auth->first;
