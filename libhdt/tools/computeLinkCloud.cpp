@@ -176,7 +176,7 @@ pair<string, string> splitPLD(string URI) {
 int main(int argc, char **argv) {
 	int c;
 	string inputFile;
-	string importDirectoriesString, exportFileString,exporCSVAuthoritativeFile;
+	string importDirectoriesString, exportFileString,exportCSVAuthoritativeFile;
 	string datasetURL = "";
 	//so far we only allow one datasetURL for the full folder.
 	//todo store potnetial different dataset URLs per file
@@ -189,7 +189,7 @@ int main(int argc, char **argv) {
 	bool minLinks = true;
 	int numMinLinks = 50;
 	bool printPercentage = true;
-	bool exporCSVAuthoritative=false;
+	bool exportCSVAuthoritative=false;
 
 	while ((c = getopt(argc, argv, "hd:ve:m:p:u:A:")) != -1) {
 		switch (c) {
@@ -208,8 +208,8 @@ int main(int argc, char **argv) {
 			exports = true;
 			break;
 		case 'A':
-			exporCSVAuthoritativeFile = optarg;
-			exporCSVAuthoritative=true;
+			exportCSVAuthoritativeFile = optarg;
+			exportCSVAuthoritative=true;
 			break;
 		case 'm':
 			istringstream(optarg) >> numMinLinks;
@@ -665,24 +665,24 @@ int main(int argc, char **argv) {
 	map<string, vector<pair<string,double>>>::iterator auth;
 
 	ofstream exportFileCSVAuth;
-	if (exporCSVAuthoritative)
+	if (exportCSVAuthoritative)
 		exportFileCSVAuth.open(exportFileString.c_str());
 	for (auth = authoritativeDataset.begin();
 			auth != authoritativeDataset.end(); auth++) {
 		string domain = auth->first;
 		if (auth->second.size()>0){
-			if (exporCSVAuthoritative)
+			if (exportCSVAuthoritative)
 				exportFileCSVAuth<<domain<<";";
 			cout << endl << " - Domain: " << domain << endl;
 			vector<pair<string,double>> authDatasets = auth->second;
 			for (int i = 0; i < authDatasets.size(); i++) {
 				cout << "    + Auth. dataset: " << authDatasets[i].first << "("<<authDatasets[i].second<<"%)"<<endl;
 			}
-			if (exporCSVAuthoritative)
+			if (exportCSVAuthoritative)
 						exportFileCSVAuth<<authDatasets[0].first<<";"<<authDatasets[0].second<<endl;
 		}
 	}
-	if (exporCSVAuthoritative)
+	if (exportCSVAuthoritative)
 		exportFileCSVAuth.close();
 
 	// now iterate the domains in datasetConnections with the domain links per dataset
