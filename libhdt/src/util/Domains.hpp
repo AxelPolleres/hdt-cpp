@@ -410,4 +410,9 @@ public:
 			return predicate_range;
 	}
 
+	double getWeightShared(){
+		double ret = totalSubjectObjects+totalOtherLessThreshold_shared/((totalUniqueSubjects+totalOtherLessThreshold_UniqueSubjects)+(totalSubjectObjects+totalOtherLessThreshold_shared));
+		return ret;
+	}
+
 };

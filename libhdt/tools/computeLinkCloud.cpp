@@ -431,7 +431,11 @@ int main(int argc, char **argv) {
 			string dataset = subit->first;
 			Domains dom = subit->second;
 			//unsigned int occs = dom.getSubjectOccurrences(currentDomain);
-			double occs = dom.getTotalOccurrencesPercentage(currentDomain);
+			//double occs = dom.getTotalOccurrencesPercentage(currentDomain);
+			//consider the percentage of subjects+shared as the key for the authoritative
+			//compute weights of the average between subjects and shared
+
+			double occs = ((1-dom.getWeightShared())*(dom.getSubjectOccurrences(currentDomain)))+(dom.getWeightShared()*dom.getSubjectObjectsOccurrencesPercentage(currentDomain));
 			if (occs > 0) {
 				allPercentages.push_back(make_pair(dataset, occs)); // store all percentages
 				if (occs > maxOccurrence) {
@@ -505,7 +509,7 @@ int main(int argc, char **argv) {
 		// print all occurrences
 		for (int i = 0; i < allPercentages.size(); i++) {
 			cout << "    + dataset: " << allPercentages[i].first << " -> "
-					<< allPercentages[i].second << " %  (sh:"
+					<< allPercentages[i].second << " % of subjects (sh:"
 					<< datasets[allPercentages[i].first].getSubjectObjectsOccurrencesPercentage(
 							currentDomain) << " %; s:"
 					<< datasets[allPercentages[i].first].getSubjectsOccurrencesPercentage(
