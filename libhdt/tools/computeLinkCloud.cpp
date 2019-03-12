@@ -274,8 +274,9 @@ int main(int argc, char **argv) {
 
 						// get the dataset name
 						string nameFile(entry->d_name);
-						subparts = split(nameFile, '_');
-						string datasetName = subparts[1];
+					//	subparts = split(nameFile, '_');
+						//string datasetName = subparts[1]; // We used this in our prior analysis to split the main part but in LOD it is not needed
+						string datasetName = nameFile;
 
 						// check that we haven't processed this dataset
 						if (datasets.find(datasetName) == datasets.end()) {
