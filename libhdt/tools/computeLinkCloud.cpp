@@ -435,7 +435,7 @@ int main(int argc, char **argv) {
 			//consider the percentage of subjects+shared as the key for the authoritative
 			//compute weights of the average between subjects and shared
 
-			double occs = ((1-dom.getWeightShared())*(dom.getSubjectOccurrences(currentDomain)))+(dom.getWeightShared()*dom.getSubjectObjectsOccurrencesPercentage(currentDomain));
+			double occs = ((1-dom.getWeightShared())*(dom.getSubjectsOccurrencesPercentage(currentDomain)))+(dom.getWeightShared()*dom.getSubjectObjectsOccurrencesPercentage(currentDomain));
 			if (occs > 0) {
 				allPercentages.push_back(make_pair(dataset, occs)); // store all percentages
 				if (occs > maxOccurrence) {
