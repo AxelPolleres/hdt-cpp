@@ -275,8 +275,8 @@ int main(int argc, char **argv) {
 						// get the dataset name
 						string nameFile(entry->d_name);
 					//	subparts = split(nameFile, '_');
-						//string datasetName = subparts[1]; // We used this in our prior analysis to split the main part but in LOD it is not needed
-						string datasetName = nameFile;
+						//string datasetName = subparts[1]; // We used this in our prior analysis to split the main part but in LOD it is not needed, it's better to just remove the preffix
+						string datasetName = nameFile.substr(8, nameFile.length()-17); //remove the initial prefix and final _dictionary-s.csv
 
 						// check that we haven't processed this dataset
 						if (datasets.find(datasetName) == datasets.end()) {
