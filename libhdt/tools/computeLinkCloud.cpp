@@ -77,6 +77,9 @@ void help() {
 	cout
 			<< "\t-e\t<exportFilePrefix>\t\tExport cloud in <outputFilePrefix.json>"
 			<< endl;
+	cout
+				<< "\t-A\t<exportFileAuthoritative>\t\tExport CSV of authoritative domains in <exportFileAuthoritative> file"
+				<< endl;
 	/*cout << "\t-l\t\t\tkeep LITERAL count in the export (false by default)"
 	 << endl;*/
 	cout
@@ -173,7 +176,7 @@ pair<string, string> splitPLD(string URI) {
 int main(int argc, char **argv) {
 	int c;
 	string inputFile;
-	string importDirectoriesString, exportFileString;
+	string importDirectoriesString, exportFileString,exporCSVAuthoritativeFile;
 	string datasetURL = "";
 	//so far we only allow one datasetURL for the full folder.
 	//todo store potnetial different dataset URLs per file
@@ -186,8 +189,9 @@ int main(int argc, char **argv) {
 	bool minLinks = true;
 	int numMinLinks = 50;
 	bool printPercentage = true;
+	bool exporCSVAuthoritative=false;
 
-	while ((c = getopt(argc, argv, "hd:ve:m:p:u:")) != -1) {
+	while ((c = getopt(argc, argv, "hd:ve:m:p:u:A:")) != -1) {
 		switch (c) {
 		case 'h':
 			help();
@@ -202,6 +206,10 @@ int main(int argc, char **argv) {
 		case 'e':
 			exportFileString = optarg;
 			exports = true;
+			break;
+		case 'A':
+			exporCSVAuthoritativeFile = optarg;
+			exporCSVAuthoritative=true;
 			break;
 		case 'm':
 			istringstream(optarg) >> numMinLinks;
@@ -326,7 +334,7 @@ int main(int argc, char **argv) {
 		}
 	}
 	// Iterate trough all namespaces and assign as the authoritative dataset the one with more terms (as a subject) using such namespace
-	map<string, vector<string>> authoritativeDataset; // map from a namespace to the dataset(s) that are authoritative for it
+	map<string, vector<pair<string, double>>> authoritativeDataset; // map from a namespace to the dataset(s) that are authoritative for it
 
 	map<string, Domains>::iterator it;
 
@@ -422,7 +430,7 @@ int main(int argc, char **argv) {
 		}
 
 		double maxOccurrence = 0;
-		vector<string> maxDatasets;
+		vector<pair<string, double>> maxDatasets;
 		// iterate all datasets
 		map<string, Domains>::iterator subit;
 		// Declaring vector of pairs
@@ -440,10 +448,10 @@ int main(int argc, char **argv) {
 				allPercentages.push_back(make_pair(dataset, occs)); // store all percentages
 				if (occs > maxOccurrence) {
 					maxDatasets.clear();
-					maxDatasets.push_back(dataset);
+					maxDatasets.push_back(make_pair(dataset,occs));
 
 				} else if (occs == maxOccurrence) {
-					maxDatasets.push_back(dataset);
+					maxDatasets.push_back(make_pair(dataset,occs));
 				}
 			}
 		}
@@ -654,16 +662,26 @@ int main(int argc, char **argv) {
 	cout<<endl<<"There are '"<<countContainDatasetName_notTopPosition<< "' datasets not in the top position that contain the domain name"<<endl;
 	// print authoritative domains
 	cout << endl << endl << endl << "Authoritative domains:" << endl;
-	map<string, vector<string>>::iterator auth;
+	map<string, vector<pair<string,double>>>::iterator auth;
+
+	ofstream exportFileCSVAuth;
+	if (exporCSVAuthoritative)
+		exportFileCSVAuth.open(exportFileString.c_str());
 	for (auth = authoritativeDataset.begin();
 			auth != authoritativeDataset.end(); auth++) {
 		string domain = auth->first;
+		if (exporCSVAuthoritative)
+			exportFileCSVAuth<<domain<<";";
 		cout << endl << " - Domain: " << domain << endl;
-		vector<string> authDatasets = auth->second;
+		vector<pair<string,double>> authDatasets = auth->second;
 		for (int i = 0; i < authDatasets.size(); i++) {
-			cout << "    + Auth. dataset: " << authDatasets[i] << endl;
+			cout << "    + Auth. dataset: " << authDatasets[i].first << "("<<authDatasets[i].second<<"%)"<<endl;
 		}
+		if (exporCSVAuthoritative)
+					exportFileCSVAuth<<authDatasets[0].first<<";"<<authDatasets[0].second<<endl;
 	}
+	if (exporCSVAuthoritative)
+		exportFileCSVAuth.close();
 
 	// now iterate the domains in datasetConnections with the domain links per dataset
 	// 1.- replace the source/target with the dataset that is authoritative
@@ -681,8 +699,16 @@ int main(int argc, char **argv) {
 		vector<DomainConnection> con = linksIt->second;
 		for (int n = 0; n < con.size(); n++) {
 			// get the authoritative dataset of the source and target
-			vector<string> autSource = authoritativeDataset[con[n].source];
-			vector<string> autTarget = authoritativeDataset[con[n].target];
+			vector<string> autSource;
+			for (int l=0;l<authoritativeDataset[con[n].source].size();l++){
+				autSource.push_back(authoritativeDataset[con[n].source][l].first);
+			}
+
+			vector<string> autTarget;
+			for (int l=0;l<authoritativeDataset[con[n].target].size();l++){
+							autSource.push_back(authoritativeDataset[con[n].target][l].first);
+						}
+
 
 			// check if the current dataset is authoritative in either source of target
 			if ((std::find(autSource.begin(), autSource.end(), dataset)
