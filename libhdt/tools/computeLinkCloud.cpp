@@ -670,15 +670,17 @@ int main(int argc, char **argv) {
 	for (auth = authoritativeDataset.begin();
 			auth != authoritativeDataset.end(); auth++) {
 		string domain = auth->first;
-		if (exporCSVAuthoritative)
-			exportFileCSVAuth<<domain<<";";
-		cout << endl << " - Domain: " << domain << endl;
-		vector<pair<string,double>> authDatasets = auth->second;
-		for (int i = 0; i < authDatasets.size(); i++) {
-			cout << "    + Auth. dataset: " << authDatasets[i].first << "("<<authDatasets[i].second<<"%)"<<endl;
+		if (auth->second.size()>0){
+			if (exporCSVAuthoritative)
+				exportFileCSVAuth<<domain<<";";
+			cout << endl << " - Domain: " << domain << endl;
+			vector<pair<string,double>> authDatasets = auth->second;
+			for (int i = 0; i < authDatasets.size(); i++) {
+				cout << "    + Auth. dataset: " << authDatasets[i].first << "("<<authDatasets[i].second<<"%)"<<endl;
+			}
+			if (exporCSVAuthoritative)
+						exportFileCSVAuth<<authDatasets[0].first<<";"<<authDatasets[0].second<<endl;
 		}
-		if (exporCSVAuthoritative)
-					exportFileCSVAuth<<authDatasets[0].first<<";"<<authDatasets[0].second<<endl;
 	}
 	if (exporCSVAuthoritative)
 		exportFileCSVAuth.close();
