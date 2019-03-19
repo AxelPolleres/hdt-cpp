@@ -390,8 +390,9 @@ int main(int argc, char **argv) {
 				}
 				exportFileCSV.close();
 				exportMaxFileCSV<<"Percentage over links with more than "<<numMinLinks<<" domains, Percentage over all triples, Percentage removing Bnode subjects, Domain"<<endl;
+				if (totalCount>0){
 				exportMaxFileCSV<<((double)maxCount/(totalCount))<<","<<((double)maxCount/(numTriples))<<","<<((double)(maxCount-numTriplesWithBnodesAsSubject)/(numTriples))<<","<<differentDomains[maxDomain]<<endl;
-
+}
 				exportMaxFileCSV.close();
 
 				//now we print the matrix iterating through all IDs, even if there are empty (for consistency with the format)
