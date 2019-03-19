@@ -32,7 +32,7 @@ using namespace std;
 
 #include <unordered_set>
 
-int thresholdNamespaces = 100; //disregard namespaces with less than 100 entities
+int thresholdNamespaces = 50; //disregard namespaces with less than 100 entities
 bool import = false;
 hdt::HDT *hdt_file1;
 char delim = ' ';
@@ -83,7 +83,7 @@ void help() {
 	/*cout << "\t-l\t\t\tkeep LITERAL count in the export (false by default)"
 	 << endl;*/
 	cout
-			<< "\t-m\t<minLinks>\t\t\tExport only those domains with at least minLinks (default: 50)"
+			<< "\t-m\t<minEntities>\t\t\tExport only those namespace with at least minEntities entities (default: 50)"
 			<< endl;
 
 	/*cout << "\t-f\t\t\tPrint full raw numbers instead of percentage of links";*/
@@ -187,7 +187,6 @@ int main(int argc, char **argv) {
 	//bool removeLiteral = false; //remove the LITERAL output in the export
 
 	bool minLinks = true;
-	int numMinLinks = 50;
 	bool printPercentage = true;
 	bool exportCSVAuthoritative=false;
 
@@ -212,7 +211,7 @@ int main(int argc, char **argv) {
 			exportCSVAuthoritative=true;
 			break;
 		case 'm':
-			istringstream(optarg) >> numMinLinks;
+			istringstream(optarg) >> thresholdNamespaces;
 			break;
 			/*	case 'f':
 			 printPercentage = false;

@@ -433,6 +433,7 @@ int main(int argc, char **argv) {
 				exportFileJSON.close();
 
 				// print all links in order to print the LOD cloud
+				exportFileCloudCSV << hdt_file1->getTriples()->getNumberOfElements() << endl;
 				exportFileCloudCSV << "source,target,links" << endl;
 				for (int i = 1; i <= differentDomains.size(); i++) {
 					for (int j = 1; j <= differentDomains.size(); j++) {
