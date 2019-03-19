@@ -32,7 +32,8 @@ using namespace std;
 
 #include <unordered_set>
 
-int thresholdNamespaces = 50; //disregard namespaces with less than 100 entities
+int thresholdNamespaces = 100; //disregard namespaces with less than 100 entities
+int minNumberofTriples = 10000; //consider all namespaces of those dataset with less or equal to 10K triples
 bool import = false;
 hdt::HDT *hdt_file1;
 char delim = ' ';
@@ -243,6 +244,7 @@ int main(int argc, char **argv) {
 	}
 	vector<string> groups; //storing the different groups
 	map<string, Domains> datasets; // a map with the name of the dataset and its range of domains
+	map<string, unsigned int> numTriplesDatasets; // a map with the name of the dataset and its number of triples
 	map<string, pair<unsigned int, unsigned int>> datasetsGroups; // a map with the name of the dataset and a pair with its ID and the group
 	map<string, vector<DomainConnection>> datasetConnections; // a map with the name of the dataset and the links
 	// read directories
@@ -262,6 +264,17 @@ int main(int argc, char **argv) {
 		// we assume the statistics are stores in a subfolder called result_analysis
 		string result_analysis_Folder = directoryDomain + "/result_analysis";
 
+		// first of all, read the number of triples
+
+		ifstream input(directoryDomain+"/allTriples.csv");
+		string line = "";
+		while (getline(input, line)) {
+			vector<string> parts = split(line, ' ');
+			unsigned int numTriples=0;
+			istringstream(parts[1]) >> numTriples;
+			numTriplesDatasets[parts[0]]=numTriples;
+			cout<< "dataset parts[0], "<<numTriples<<" triples"<<endl;
+		}
 		DIR *pDIR;
 		struct dirent *entry;
 		if (pDIR = opendir(result_analysis_Folder.c_str())) {
@@ -285,8 +298,13 @@ int main(int argc, char **argv) {
 									+ nameFile.substr(0, nameFile.length() - 6);
 
 							// Import the range of domains from the input file. Second parameter is the number of shared items, but we don't really need it for this use case
+							int threshold =thresholdNamespaces;
+							if (numTriplesDatasets[datasetName]<=minNumberofTriples){
+								threshold=0;
+								cout<<"dataset "<<datasetName<<" with threshold 0"<<endl;
+							}
 							Domains datasetDomain(nameFile, 0,
-									thresholdNamespaces);
+									threshold);
 
 							datasets[datasetName] = datasetDomain;
 							datasetsGroups[datasetName] = pair<unsigned int,
