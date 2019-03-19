@@ -467,6 +467,7 @@ int main(int argc, char **argv) {
 				if (occs > maxOccurrence) {
 					maxDatasets.clear();
 					maxDatasets.push_back(make_pair(dataset,occs));
+					maxOccurrence = occs;
 
 				} else if (occs == maxOccurrence) {
 					maxDatasets.push_back(make_pair(dataset,occs));
