@@ -14,7 +14,7 @@
 #include <getopt.h>
 #include <string>
 #include <string.h>
-#include <strings.h> // strncasecmp is usually in strongs.h, but sometimes in string.h. better include both?
+#include <strings.h> // strncasecmp is usually in strongs.h, but sometimes in string.h... better include both?
 #include <iostream>
 #include <fstream>
 
